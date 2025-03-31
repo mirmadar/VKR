@@ -4,19 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Главная страница</title>
-  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <header>
-  <h1>Добро пожаловать!</h1>
+  <h1>Добро пожаловать, <span th:text="${user.username}"></span>!</h1> <!-- Имя пользователя -->
   <nav>
     <a href="/logout">Выйти</a> |
   </nav>
 </header>
 
 <main>
-  <h2>Вы успешно авторизованы!</h2>
-  <p>Добро пожаловать на главную страницу.</p>
+  <h2>Ваш профиль:</h2>
+  <p>Имя пользователя: <span th:text="${user.username}"></span></p> <!-- Имя пользователя -->
+  <p>Электронная почта: <span th:text="${user.email}"></span></p> <!-- Почта пользователя -->
 </main>
 </body>
 </html>
