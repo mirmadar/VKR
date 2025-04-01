@@ -6,29 +6,252 @@
 <body>
 
 <h2>Оборудование</h2>
+<form th:action="@{/resources}" method="get">
+  <h3>Фильтр оборудования</h3>
+
+  <!-- Название -->
+  <label>Название:</label>
+  <select name="equipmentName">
+    <option value="">Все названия</option>  <!-- Передаст "" -->
+    <option th:each="name : ${equipmentNames}"
+            th:value="${name}"
+            th:text="${name}"
+            th:selected="${selectedEquipmentName == name}">
+    </option>
+  </select>
+
+  <!-- Тип -->
+  <label>Тип:</label>
+  <select name="equipmentType">
+    <option value="">Все типы</option>
+    <option
+            th:each="type : ${equipmentTypes}"
+            th:value="${type}"
+            th:text="${type}"
+            th:selected="${selectedEquipmentType == type}"
+    ></option>
+  </select>
+
+  <!-- Локация -->
+  <label>Локация:</label>
+  <select name="equipmentLocation">
+    <option value="">Все локации</option>
+    <option
+            th:each="location : ${equipmentLocations}"
+            th:value="${location}"
+            th:text="${location}"
+            th:selected="${selectedEquipmentLocation == location}"
+    ></option>
+  </select>
+
+  <!-- Состояние -->
+  <label>Состояние:</label>
+  <select name="equipmentCondition">
+    <option value="">Все состояния</option>
+    <option
+            th:each="condition : ${equipmentConditions}"
+            th:value="${condition}"
+            th:text="${condition}"
+            th:selected="${selectedEquipmentCondition == condition}"
+    ></option>
+  </select>
+
+  <!-- Дата проверки -->
+  <label>Дата проверки:</label>
+  <select name="equipmentVerificationDate">
+    <option value="">Все даты</option>
+    <option
+            th:each="date : ${equipmentVerificationDates}"
+            th:value="${date}"
+            th:text="${date}"
+            th:selected="${selectedEquipmentVerificationDate == date}"
+    ></option>
+  </select>
+
+  <!-- Дата последнего обслуживания -->
+  <label>Последнее обслуживание:</label>
+  <select name="equipmentLastMaintenanceDate">
+    <option value="">Все даты</option>
+    <option
+            th:each="date : ${equipmentLastMaintenanceDates}"
+            th:value="${date}"
+            th:text="${date}"
+            th:selected="${selectedEquipmentLastMaintenanceDate == date}"
+    ></option>
+  </select>
+
+  <!-- Дата следующего обслуживания -->
+  <label>Следующее обслуживание:</label>
+  <select name="equipmentNextMaintenanceDate">
+    <option value="">Все даты</option>
+    <option
+            th:each="date : ${equipmentNextMaintenanceDates}"
+            th:value="${date}"
+            th:text="${date}"
+            th:selected="${selectedEquipmentNextMaintenanceDate == date}"
+    ></option>
+  </select>
+
+  <button type="submit">Применить фильтр</button>
+  <a th:href="@{/resources}">Сбросить фильтры</a>
+</form>
 <table>
   <thead>
   <tr>
     <th>ID</th>
     <th>Название</th>
+    <th>Тип</th>
+    <th>Местоположение</th>
     <th>Состояние</th>
-    <th>Дата проверки</th>
+    <th>Дата последней проверки</th>
+    <th>Дата последнего обслуживания</th>
+    <th>Дата следующего обслуживания</th>
   </tr>
   </thead>
   <tbody>
-  <tr th:if="${equipmentList != null and not #lists.isEmpty(equipmentList)}" th:each="equipment : ${equipmentList}">
+  <!-- Отображение данных -->
+  <tr th:if="${equipmentList != null and not #lists.isEmpty(equipmentList)}"
+      th:each="equipment : ${equipmentList}">
     <td th:text="${equipment.id}"></td>
     <td th:text="${equipment.name}"></td>
+    <td th:text="${equipment.type}"></td>
+    <td th:text="${equipment.location}"></td>
     <td th:text="${equipment.condition}"></td>
     <td th:text="${equipment.dateOfVerification}"></td>
+    <td th:text="${equipment.lastMaintenanceDate}"></td>
+    <td th:text="${equipment.nextMaintenanceDate}"></td>
   </tr>
+
+  <!-- Если данных нет -->
   <tr th:if="${#lists.isEmpty(equipmentList)}">
-    <td colspan="4">Нет данных</td>
+    <td colspan="8">Нет данных</td>
   </tr>
   </tbody>
 </table>
 
 <h2>Персонал</h2>
+<!-- Фильтр сотрудников -->
+<form th:action="@{/resources}" method="get">
+  <h3>Фильтр сотрудников</h3>
+
+  <!-- Имя -->
+  <label>Имя:</label>
+  <select name="employeeName">
+    <option value="">Все имена</option>
+    <option th:each="name : ${employeeNames}"
+            th:value="${name}"
+            th:text="${name}"
+            th:selected="${selectedEmployeeName == name}">
+    </option>
+  </select>
+
+  <!-- Должность -->
+  <label>Должность:</label>
+  <select name="employeePosition">
+    <option value="">Все должности</option>
+    <option th:each="position : ${employeePositions}"
+            th:value="${position}"
+            th:text="${position}"
+            th:selected="${selectedEmployeePosition == position}">
+    </option>
+  </select>
+
+  <!-- Отдел -->
+  <label>Отдел:</label>
+  <select name="employeeDepartment">
+    <option value="">Все отделы</option>
+    <option th:each="department : ${employeeDepartments}"
+            th:value="${department}"
+            th:text="${department}"
+            th:selected="${selectedEmployeeDepartment == department}">
+    </option>
+  </select>
+
+  <!-- Дата приема -->
+  <label>Дата приема:</label>
+  <select name="employeeHireDate">
+    <option value="">Все даты</option>
+    <option th:each="date : ${employeeHireDates}"
+            th:value="${date}"
+            th:text="${date}"
+            th:selected="${selectedEmployeeHireDate == date}">
+    </option>
+  </select>
+
+  <!-- Зарплата -->
+  <label>Зарплата:</label>
+  <select name="employeeSalary">
+    <option value="">Все зарплаты</option>
+    <option th:each="salary : ${employeeSalaries}"
+            th:value="${salary}"
+            th:text="${salary}"
+            th:selected="${selectedEmployeeSalary == salary}">
+    </option>
+  </select>
+
+  <label>Загруженность:</label>
+  <select name="employeeWorkload">
+    <option value="">---</option>
+    <option th:each="workload : ${employeeWorkloads}"
+            th:value="${workload}"
+            th:text="${workload}"
+            th:selected="${selectedEmployeeWorkload == workload}">
+    </option>
+  </select>
+
+  <label>Переработка:</label>
+  <select name="employeeOvertimeHours">
+    <option value="">---</option>
+    <option th:each="overtimeHours : ${employeeOvertimeHours}"
+            th:value="${overtimeHours}"
+            th:text="${overtimeHours}"
+            th:selected="${selectedEmployeeOvertimeHours == overtimeHours}">
+    </option>
+  </select>
+
+  <label>Количество проектов:</label>
+  <select name="employeeProjectsCount">
+    <option value="">---</option>
+    <option th:each="projectsCount : ${employeeProjectsCounts}"
+            th:value="${projectsCount}"
+            th:text="${projectsCount}"
+            th:selected="${selectedEmployeeProjectsCount == projectsCount}">
+    </option>
+  </select>
+
+  <label>На работе или в отпуске:</label>
+  <select name="employeeVacationStatus">
+    <option value="">---</option>
+    <option th:each="vacationStatus : ${employeeVacationStatuses}"
+            th:value="${vacationStatus}"
+            th:text="${vacationStatus}"
+            th:selected="${selectedEmployeeVacationStatus == vacationStatus}">
+    </option>
+  </select>
+
+  <label>Остаток отпускных дней:</label>
+  <select name="employeeVacationDaysLeft">
+    <option value="">---</option>
+    <option th:each="vacationDaysLeft : ${employeeVacationDaysLeft}"
+            th:value="${vacationDaysLeft}"
+            th:text="${vacationDaysLeft}"
+            th:selected="${selectedEmployeeVacationDaysLeft == vacationDaysLeft}">
+    </option>
+  </select>
+
+  <label>Остаток отпускных дней:</label>
+  <select name="employeeSickLeaveDays">
+    <option value="">---</option>
+    <option th:each="sickLeaveDays : ${employeeSickLeaveDays}"
+            th:value="${sickLeaveDays}"
+            th:text="${sickLeaveDays}"
+            th:selected="${selectedEmployeeSickLeaveDays == sickLeaveDays}">
+    </option>
+  </select>
+
+  <button type="submit">Применить фильтр</button>
+  <a th:href="@{/resources}">Сбросить фильтры</a>
+</form>
 <table>
   <thead>
   <tr>
@@ -36,43 +259,152 @@
     <th>ФИО</th>
     <th>Должность</th>
     <th>Отдел</th>
+    <th>Дата найма</th>
+    <th>Зарплата</th>
+    <th>Загруженность</th>
+    <th>Переработка</th>
+    <th>Количество проектов</th>
+    <th>На работе или в отпуске</th>
+    <th>Остаток отпускных дней</th>
+    <th>Дни на больничном</th>
   </tr>
   </thead>
   <tbody>
-  <tr th:if="${employeesList != null and not #lists.isEmpty(employeesList)}" th:each="employee : ${employeesList}">
+  <tr th:if="${employeeList != null and not #lists.isEmpty(employeeList)}" th:each="employee : ${employeeList}">
     <td th:text="${employee.id}"></td>
     <td th:text="${employee.name}"></td>
     <td th:text="${employee.position}"></td>
     <td th:text="${employee.department}"></td>
+    <td th:text="${employee.hireDate}"></td>
+    <td th:text="${employee.salary}"></td>
+    <td th:text="${employee.workload}"></td>
+    <td th:text="${employee.overtimeHours}"></td>
+    <td th:text="${employee.projectsCount}"></td>
+    <td th:text="${employee.vacationStatus}"></td>
+    <td th:text="${employee.vacationDaysLeft}"></td>
+    <td th:text="${employee.sickLeaveDays}"></td>
   </tr>
-  <tr th:if="${#lists.isEmpty(employeesList)}">
+  <tr th:if="${#lists.isEmpty(employeeList)}">
     <td colspan="4">Нет данных</td>
   </tr>
   </tbody>
 </table>
 
 <h2>Материалы</h2>
+<form th:action="@{/resources}" method="get">
+  <h3>Фильтр материалов</h3>
+
+  <!-- Название -->
+  <label>Название:</label>
+  <select name="materialName">
+    <option value="">Все названия</option>
+    <option th:each="name : ${materialNames}"
+            th:value="${name}"
+            th:text="${name}"
+            th:selected="${selectedMaterialName == name}">
+    </option>
+  </select>
+
+  <!-- Количество -->
+  <label>Количество:</label>
+  <select name="materialQuantity">
+    <option value="">Все количества</option>
+    <option th:each="quantity : ${materialQuantities}"
+            th:value="${quantity}"
+            th:text="${quantity}"
+            th:selected="${selectedMaterialQuantity == quantity}">
+    </option>
+  </select>
+
+  <!-- Единица измерения -->
+  <label>Единица измерения:</label>
+  <select name="materialUnit">
+    <option value="">Все единицы</option>
+    <option th:each="unit : ${materialUnits}"
+            th:value="${unit}"
+            th:text="${unit}"
+            th:selected="${selectedMaterialUnit == unit}">
+    </option>
+  </select>
+
+  <!-- Поставщик -->
+  <label>Поставщик:</label>
+  <select name="materialSupplier">
+    <option value="">Все поставщики</option>
+    <option th:each="supplier : ${materialSuppliers}"
+            th:value="${supplier}"
+            th:text="${supplier}"
+            th:selected="${selectedMaterialSupplier == supplier}">
+    </option>
+  </select>
+
+  <!-- Дата прибытия -->
+  <label>Дата прибытия:</label>
+  <select name="materialArrivalDate">
+    <option value="">Все даты</option>
+    <option th:each="date : ${materialArrivalDates}"
+            th:value="${date}"
+            th:text="${date}"
+            th:selected="${selectedMaterialArrivalDate == date}">
+    </option>
+  </select>
+
+  <!-- Срок годности -->
+  <label>Срок годности:</label>
+  <select name="materialExpirationDate">
+    <option value="">Все даты</option>
+    <option th:each="date : ${materialExpirationDates}"
+            th:value="${date}"
+            th:text="${date}"
+            th:selected="${selectedMaterialExpirationDate == date}">
+    </option>
+  </select>
+
+  <!-- Номер партии -->
+  <label>Номер партии:</label>
+  <select name="materialBatchNumber">
+    <option value="">Все номера</option>
+    <option th:each="batch : ${materialBatchNumbers}"
+            th:value="${batch}"
+            th:text="${batch}"
+            th:selected="${selectedMaterialBatchNumber == batch}">
+    </option>
+  </select>
+
+  <button type="submit">Применить фильтр</button>
+  <a th:href="@{/resources}">Сбросить фильтры</a>
+</form>
+
+<!-- Таблица материалов -->
 <table>
   <thead>
   <tr>
     <th>ID</th>
     <th>Название</th>
     <th>Количество</th>
+    <th>Единица</th>
     <th>Поставщик</th>
+    <th>Дата прибытия</th>
+    <th>Срок годности</th>
+    <th>Номер партии</th>
   </tr>
   </thead>
   <tbody>
-  <tr th:if="${materialsList != null and not #lists.isEmpty(materialsList)}" th:each="material : ${materialsList}">
+  <tr th:if="${materialList != null and not materialList.empty}"
+      th:each="material : ${materialList}">
     <td th:text="${material.id}"></td>
     <td th:text="${material.name}"></td>
     <td th:text="${material.quantity}"></td>
+    <td th:text="${material.unit}"></td>
     <td th:text="${material.supplier}"></td>
+    <td th:text="${material.arrivalDate}"></td>
+    <td th:text="${material.expirationDate}"></td>
+    <td th:text="${material.batchNumber}"></td>
   </tr>
-  <tr th:if="${#lists.isEmpty(materialsList)}">
-    <td colspan="4">Нет данных</td>
+  <tr th:if="${materialList == null or materialList.empty}">
+    <td colspan="8">Нет данных</td>
   </tr>
   </tbody>
 </table>
-
 </body>
 </html>

@@ -18,17 +18,14 @@ public class Employee {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-
     private String name;
     private String position;
     private String department;
     private LocalDate hireDate;
     private double salary;
-
     private double workload;
     private double overtimeHours;
     private int projectsCount;
-
     private String vacationStatus;
     private int vacationDaysLeft;
     private int sickLeaveDays;

@@ -18,11 +18,9 @@ public class Material {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-
     private String name;
     private double quantity;
     private String unit;
-
     private String supplier;
     private LocalDate arrivalDate;
     private LocalDate expirationDate;
