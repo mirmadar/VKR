@@ -9,7 +9,7 @@ import lombok.Setter;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "equipments")
+@Table(name = "equipment")
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -20,11 +20,15 @@ public class Equipment {
     private Integer id;
     private String name;
     private String type;
+    private String model;
+    private String serialNumber;
     private String location;
-    private String condition;
-    private LocalDate dateOfVerification;
-    private LocalDate lastMaintenanceDate;
-    private LocalDate nextMaintenanceDate;
+    private LocalDate purchaseDate;
+    private LocalDate warrantyExpiration;
+    private LocalDate lastMaintenance;
+    private LocalDate nextMaintenance;
+    private String status;
+    private String supplier;
+    private Double cost;
 }
-
 
