@@ -1,0 +1,261 @@
+:root {
+  --primary: #2F4144;
+  --secondary: #A3E9DF;
+  --background: #FFFFFE;
+  --accent: #F3CAE2;
+  --dark-accent: #483641;
+  --text: #2F4144;
+  --text-light: #5F7174;
+  --border: #E0E3E6;
+}
+
+/* Базовые стили */
+body {
+  background-color: var(--background);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+/* Заголовки */
+h2 {
+  color: var(--primary);
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+
+/* Навигационные вкладки */
+.nav-tabs {
+  border-bottom: 1px solid var(--border);
+}
+.nav-tabs .nav-link {
+  color: var(--text-light);
+  border: none;
+  padding: 12px 20px;
+  font-weight: 500;
+  position: relative;
+}
+.nav-tabs .nav-link.active {
+  color: var(--primary);
+  background: transparent;
+}
+.nav-tabs .nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--secondary);
+}
+.nav-tabs .nav-link:hover {
+  color: var(--primary);
+  border-color: transparent;
+}
+
+/* Кнопки */
+.btn-primary,
+#selectAllBtn {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  font-weight: 500;
+}
+.btn-primary:hover,
+#selectAllBtn:hover {
+  background-color: var(--secondary);
+  color: var(--primary);
+}
+.btn-outline-secondary,
+#deselectAllBtn {
+  background: white;
+  color: var(--primary);
+  border: 1px solid var(--border);
+  padding: 8px 16px;
+  font-weight: 500;
+}
+.btn-outline-secondary:hover,
+#deselectAllBtn:hover {
+  background-color: rgba(163, 233, 223, 0.1);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+#exportBtn {
+  background-color: #217346;
+  color: white;
+  border: none;
+  font-weight: 500;
+  padding: 8px 16px;
+  margin-bottom: 0;
+}
+#exportBtn:hover {
+  background-color: #1A5C38;
+}
+
+/* Формы */
+.form-label {
+  color: var(--text-light);
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+.form-control,
+.form-select {
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+}
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--secondary);
+  box-shadow: 0 0 0 0.25rem rgba(163, 233, 223, 0.25);
+  outline: 0;
+}
+
+/* Переключатели */
+.form-switch .form-check-input {
+  width: 2.5em;
+  height: 1.5em;
+  margin-right: 0.5em;
+  background-color: #E0E3E6;
+  border-color: #E0E3E6;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+.form-switch .form-check-input:checked {
+  background-color: var(--secondary);
+  border-color: var(--secondary);
+}
+.form-switch .form-check-input:focus {
+  box-shadow: 0 0 0 0.25rem rgba(163, 233, 223, 0.25);
+  border-color: var(--secondary);
+}
+
+/* Таблица */
+.table-container {
+  margin: 30px 16px;
+  width: auto;
+}
+
+.table-responsive {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background-color: var(--background);
+  box-shadow: 0 1px 3px rgba(47, 65, 68, 0.05);
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 8px;
+}
+
+.table {
+  width: 100%;
+  min-width: 900px;
+  margin-bottom: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.875rem;
+  --bs-table-bg: transparent;
+  --bs-table-striped-bg: rgba(163, 233, 223, 0.05);
+  --bs-table-hover-bg: rgba(163, 233, 223, 0.08);
+}
+
+/* Заголовки с цветами из второго варианта */
+.table th {
+  font-weight: 600;
+  color: var(--text-light);
+  border-bottom: 1px solid var(--border);
+  border-top: none;
+  padding: 12px 16px;
+  white-space: nowrap;
+  background-color: rgba(163, 233, 223, 0.03);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* Ячейки с объединёнными стилями */
+.table td {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  vertical-align: middle;
+  white-space: normal;
+  word-break: break-word;
+  max-width: 150px;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* Границы строк */
+.table tbody tr:first-child td {
+  border-top: none;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Полоски и ховер из второго варианта */
+.table-striped tbody tr:nth-of-type(even) {
+  background-color: var(--bs-table-striped-bg);
+}
+
+.table tbody tr:hover td {
+  background-color: var(--bs-table-hover-bg);
+}
+
+/* Скролл из первого варианта */
+.table-responsive::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Ячейки действий */
+.table-actions-cell {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+
+
+/* Аккордеон */
+.accordion {
+  border-radius: 8px;
+  overflow: hidden;
+  --bs-accordion-border-color: var(--border);
+  margin-bottom: 1rem;
+}
+.accordion-button {
+  background: rgba(163, 233, 223, 0.15);
+  font-weight: 500;
+}
+.accordion-button:not(.collapsed) {
+  background: var(--primary) !important;
+  color: white !important;
+  box-shadow: none;
+}
+
+/* Прочее */
+.full-width-container {
+  width: 100vw;
+  padding: 2rem;
+  position: relative;
+  left: 50%;
+  right: 50%;
+}
+.hidden-column {
+  display: none;
+}

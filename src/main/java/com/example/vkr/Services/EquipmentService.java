@@ -25,6 +25,22 @@ public class EquipmentService {
         return equipmentRepository.findAll(EquipmentSpecification.withFilters(filter)); // Без пагинации
     }
 
+    public List<String> findDistinctTypes() {
+        return equipmentRepository.findDistinctTypes();
+    }
+
+    public List<String> findDistinctLocations() {
+        return equipmentRepository.findDistinctLocations();
+    }
+
+    public List<String> findDistinctStatuses() {
+        return equipmentRepository.findDistinctStatuses();
+    }
+
+    public List<String> findDistinctSuppliers() {
+        return equipmentRepository.findDistinctSuppliers();
+    }
+
     public Optional<Equipment> getEquipmentById(Integer id) {
         return equipmentRepository.findById(id);
     }

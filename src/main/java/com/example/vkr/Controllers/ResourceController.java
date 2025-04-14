@@ -1,5 +1,6 @@
 package com.example.vkr.Controllers;
 
+import com.example.vkr.Config.EquipmentColumnsConfig;
 import com.example.vkr.DTO.EquipmentFilterDTO;
 import com.example.vkr.Models.Equipment;
 import com.example.vkr.Services.EquipmentExcelExporter;
@@ -13,6 +14,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;
@@ -24,29 +27,29 @@ public class ResourceController {
 
     private final EquipmentService equipmentService;
 
-    @ModelAttribute("equipmentFilterDTO")
-    public EquipmentFilterDTO equipmentFilterDTO() {
-        return new EquipmentFilterDTO();
-    }
-
     @GetMapping
-    public String showResourcesPage(@ModelAttribute("equipmentFilterDTO") EquipmentFilterDTO equipmentFilterDTO, Model model) {
-        List<Equipment> equipmentList = equipmentService.getFilteredEquipment(equipmentFilterDTO);
-        model.addAttribute("equipmentList", equipmentList);
+    public String showResourcesPage(@ModelAttribute("equipmentFilterDTO") EquipmentFilterDTO equipmentFilterDTO,
+                                    Model model) {
+        model.addAttribute("equipmentList", equipmentService.getFilteredEquipment(equipmentFilterDTO));
+        model.addAttribute("allColumns", EquipmentColumnsConfig.COLUMN_NAMES);
+
+        model.addAttribute("uniqueTypes", equipmentService.findDistinctTypes());
+        model.addAttribute("uniqueLocations", equipmentService.findDistinctLocations());
+        model.addAttribute("uniqueStatuses", equipmentService.findDistinctStatuses());
+        model.addAttribute("uniqueSuppliers", equipmentService.findDistinctSuppliers());
         return "resources";
     }
 
     @GetMapping("/equipment/export")
-    public ResponseEntity<byte[]> exportEquipmentToExcel(@ModelAttribute("equipmentFilterDTO") EquipmentFilterDTO filter) throws IOException {
+    public ResponseEntity<byte[]> exportEquipmentToExcel(
+            @ModelAttribute("equipmentFilterDTO") EquipmentFilterDTO filter,
+            @RequestParam(value = "columns", required = false) List<String> columns) throws IOException {
+
         List<Equipment> filteredEquipment = equipmentService.getFilteredEquipment(filter);
-        ByteArrayInputStream in = EquipmentExcelExporter.exportToExcel(filteredEquipment);
+        ByteArrayInputStream in = EquipmentExcelExporter.exportToExcel(filteredEquipment, columns);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Disposition", "attachment; filename=equipment.xlsx");
-
-        return ResponseEntity
-                .ok()
-                .headers(headers)
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=equipment.xlsx")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(in.readAllBytes());
     }
