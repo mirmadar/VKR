@@ -1,28 +1,100 @@
 <!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Авторизация</title>
+    <title>Авторизация | Visorum</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="login.css">
 </head>
 <body>
-<div class="container">
-    <div class="info">
+<div class="auth-container">
+    <div class="info-section">
         <h1>Visorum</h1>
-        <p>Loren ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor, felis a malesuada tincidunt...</p>
+        <p>Добро пожаловать в систему управления ресурсами. Войдите, чтобы получить доступ к полному функционалу платформы.</p>
+        <div class="d-none d-lg-block features">
+            <div class="feature-item">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 4V20M8 8L12 4L16 8M8 16L12 20L16 16" stroke="var(--secondary)" stroke-width="2"/>
+                </svg>
+                <span>Экспорт в Excel и PDF</span>
+            </div>
+            <div class="feature-item">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="var(--accent)" stroke-width="2"/>
+                </svg>
+                <span>Гибкая фильтрация данных</span>
+            </div>
+        </div>
     </div>
-    <div class="form-container">
+    <div class="form-section">
         <h2>Авторизация</h2>
-        <form th:action="@{/login}" method="post">
-            <input type="text" name="username" id="username" placeholder="Логин" required>
-            <input type="password" name="password" id="password" placeholder="Пароль" required>
-            <button type="submit">Войти</button>
+        <form class="auth-form" th:action="@{/login}" method="post">
+            <div class="form-group">
+                <div class="input-icon">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16.6667 17.5V15.8333C16.6667 14.9493 16.3155 14.1014 15.6903 13.4763C15.0652 12.8512 14.2174 12.5 13.3333 12.5H6.66668C5.78262 12.5 4.93478 12.8512 4.30965 13.4763C3.68453 14.1014 3.33334 14.9493 3.33334 15.8333V17.5" stroke="var(--text-light)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M10 9.16667C11.8409 9.16667 13.3333 7.67428 13.3333 5.83333C13.3333 3.99238 11.8409 2.5 10 2.5C8.15905 2.5 6.66666 3.99238 6.66666 5.83333C6.66666 7.67428 8.15905 9.16667 10 9.16667Z" stroke="var(--text-light)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <input type="text" class="form-control" name="username" id="username" placeholder="Логин" required>
+            </div>
+            <div class="form-group">
+                <div class="input-icon">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15.8333 9.16667H4.16668C3.2462 9.16667 2.50001 9.91286 2.50001 10.8333V16.6667C2.50001 17.5871 3.2462 18.3333 4.16668 18.3333H15.8333C16.7538 18.3333 17.5 17.5871 17.5 16.6667V10.8333C17.5 9.91286 16.7538 9.16667 15.8333 9.16667Z" stroke="var(--text-light)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M5.83334 9.16667V5.83333C5.83334 4.72827 6.27233 3.66846 7.05374 2.88705C7.83515 2.10565 8.89496 1.66667 10 1.66667C11.1051 1.66667 12.1649 2.10565 12.9463 2.88705C13.7277 3.66846 14.1667 4.72827 14.1667 5.83333V9.16667" stroke="var(--text-light)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <input type="password" class="form-control" name="password" id="password" placeholder="Пароль" required>
+            </div>
+
+            <div th:if="${param.error}" class="error-message">
+                <svg width="18" height="18" viewBox="0 0 24 24">
+                    <path d="M12 8V12M12 16H12.01M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="#D32F2F" stroke-width="2"/>
+                </svg>
+                Неправильный логин или пароль
+            </div>
+            <div th:if="${param.logout}" class="success-message">
+                <svg width="18" height="18" viewBox="0 0 24 24">
+                    <path d="M22 11.08V12C21.9988 14.1564 21.3005 16.2547 20.0093 17.9818C18.7182 19.709 16.9033 20.9725 14.8354 21.5839C12.7674 22.1953 10.5573 22.1219 8.53447 21.3746C6.51168 20.6273 4.78465 19.2461 3.61096 17.4371C2.43727 15.628 1.87979 13.4881 2.02168 11.3363C2.16356 9.18455 2.99721 7.13631 4.39828 5.49706C5.79935 3.85781 7.69279 2.71537 9.79619 2.24013C11.8996 1.7649 14.1003 1.98232 16.07 2.85999" stroke="#217346" stroke-width="2"/>
+                    <path d="M22 4L12 14.01L9 11.01" stroke="#217346" stroke-width="2"/>
+                </svg>
+                Вы вышли из системы
+            </div>
+
+            <button type="submit" class="btn-submit">
+                <svg width="20" height="20" viewBox="0 0 20 20">
+                    <path d="M3.33334 10H16.6667M16.6667 10L11.6667 5M16.6667 10L11.6667 15" stroke="white" stroke-width="1.5"/>
+                </svg>
+                Войти
+            </button>
+
+<!--            <div class="social-divider">или войдите с помощью</div>-->
+
+<!--            <div class="social-buttons">-->
+<!--                <a href="#" class="social-btn">-->
+<!--                    <svg width="18" height="18" viewBox="0 0 24 24">-->
+<!--                        <path d="M22 12C22 6.477 17.523 2 12 2C6.477 2 2 6.477 2 12C2 16.991 5.657 21.128 10.438 21.878V14.891H7.898V12H10.438V9.797C10.438 7.291 11.93 5.907 14.215 5.907C15.309 5.907 16.453 6.102 16.453 6.102V8.562H15.193C13.95 8.562 13.563 9.333 13.563 10.124V12H16.336L15.893 14.89H13.563V21.878C18.343 21.128 22 16.991 22 12Z" fill="var(&#45;&#45;text-light)"/>-->
+<!--                    </svg>-->
+<!--                </a>-->
+<!--                <a href="#" class="social-btn">-->
+<!--                    <svg width="18" height="18" viewBox="0 0 24 24">-->
+<!--                        <path d="M12.545 10.239V13.762H16.453C16.275 14.828 15.601 16.656 13.879 17.773C12.654 18.587 11.064 19 9.282 19C5.913 19 3.1 16.393 3.1 13.1C3.1 9.807 5.913 7.2 9.282 7.2C10.733 7.2 12.046 7.662 13.079 8.419L15.017 6.581C13.436 5.239 11.387 4.4 9.282 4.4C4.694 4.4 1 8.095 1 12.6C1 17.105 4.694 20.8 9.282 20.8C13.756 20.8 17.318 17.321 17.318 12.6C17.318 12.414 17.309 12.231 17.291 12.05C17.282 11.95 17.273 11.85 17.273 11.745C17.273 11.636 17.282 11.536 17.291 11.436C17.3 11.336 17.309 11.236 17.309 11.127H12.545Z" fill="var(&#45;&#45;text-light)"/>-->
+<!--                    </svg>-->
+<!--                </a>-->
+<!--            </div>-->
+
+            <div class="auth-links">
+                <p>Нет аккаунта? <a href="/register">Зарегистрироваться</a></p>
+<!--                <p><a href="/forgot-password">Забыли пароль?</a></p>-->
+            </div>
         </form>
-        <p th:if="${param.error}" class="error">Неправильный логин или пароль</p>
-        <p th:if="${param.logout}" style="color: green;">Вы вышли из системы</p>
-        <p>Нет аккаунта? <a href="/register">Зарегистрироваться</a></p>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

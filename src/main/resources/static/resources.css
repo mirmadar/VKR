@@ -66,6 +66,15 @@ h2 {
   background-color: var(--secondary);
   color: var(--primary);
 }
+
+/* Убираем стили активного состояния */
+.btn-primary:active,
+.btn-primary:focus {
+  background-color: var(--primary) !important;
+  color: white !important;
+  box-shadow: none !important;
+}
+
 .btn-outline-secondary,
 #deselectAllBtn {
   background: white;
