@@ -4,7 +4,9 @@ import com.example.vkr.Config.EquipmentColumnsConfig;
 import com.example.vkr.DTO.EquipmentFilterDTO;
 import com.example.vkr.Models.Equipment;
 import com.example.vkr.Services.EquipmentExcelExporter;
+import com.example.vkr.Services.EquipmentPdfExporter;
 import com.example.vkr.Services.EquipmentService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 
 @Controller
@@ -40,7 +43,7 @@ public class ResourceController {
         return "resources";
     }
 
-    @GetMapping("/equipment/export")
+    @GetMapping("/equipment/export-excel")
     public ResponseEntity<byte[]> exportEquipmentToExcel(
             @ModelAttribute("equipmentFilterDTO") EquipmentFilterDTO filter,
             @RequestParam(value = "columns", required = false) List<String> columns) throws IOException {
@@ -53,4 +56,25 @@ public class ResourceController {
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(in.readAllBytes());
     }
+
+    @GetMapping("/equipment/export-pdf")
+    public void exportEquipmentToPdf(HttpServletResponse response,
+                                     @ModelAttribute("equipmentFilterDTO") EquipmentFilterDTO filter,
+                                     @RequestParam(required = false) List<String> columns) throws IOException {
+        response.setContentType("application/pdf");
+        response.setHeader("Content-Disposition", "attachment; filename=equipment.pdf");
+
+        List<Equipment> filteredEquipment = equipmentService.getFilteredEquipment(filter);
+
+        try (OutputStream out = response.getOutputStream()) {
+            EquipmentPdfExporter exporter = new EquipmentPdfExporter(filteredEquipment, columns);
+            exporter.export(out);
+        } catch (Exception e) {
+            response.reset();
+            response.setContentType("text/plain");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write("Ошибка генерации PDF: " + e.getMessage());
+        }
+    }
+
 }
