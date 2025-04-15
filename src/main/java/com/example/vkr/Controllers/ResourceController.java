@@ -9,7 +9,6 @@ import com.example.vkr.Services.EquipmentService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -41,32 +40,44 @@ public class ResourceController {
     }
 
     @GetMapping("/equipment/export-excel")
-    public ResponseEntity<byte[]> exportEquipmentToExcel(
-            @ModelAttribute EquipmentFilterDTO filter,
+    public ResponseEntity<byte[]> exportToExcel(
             @RequestParam(required = false) List<String> columns,
             @RequestParam(required = false) String chartType,
             @RequestParam(required = false) String groupByField,
-            @RequestParam(required = false) String valueField) throws IOException {
+            @RequestParam(required = false) String valueField,
+            @RequestParam(required = false) String subGroupByField
+    ) throws IOException {
 
-        List<Equipment> filteredEquipment = equipmentService.getFilteredEquipment(filter);
+        List<Equipment> equipmentList = equipmentService.getAllEquipment();
 
-        // Если не указаны колонки, используем все доступные
-        if (columns == null || columns.isEmpty()) {
-            columns = new ArrayList<>(EquipmentColumnsConfig.COLUMN_NAMES);
+        ByteArrayInputStream byteArrayInputStream;
+
+        if (chartType != null && groupByField != null && valueField != null) {
+            byteArrayInputStream = EquipmentExcelExporter.exportToExcel(
+                    equipmentList,
+                    columns != null ? columns : List.of("type", "location", "status", "cost"),
+                    chartType,
+                    groupByField,
+                    valueField,
+                    subGroupByField
+            );
+        } else {
+            byteArrayInputStream = EquipmentExcelExporter.exportToExcel(
+                    equipmentList,
+                    columns != null ? columns : List.of("type", "location", "status", "cost")
+            );
         }
 
-        ByteArrayInputStream in = EquipmentExcelExporter.exportToExcel(
-                filteredEquipment,
-                columns,
-                chartType,
-                groupByField,
-                valueField
-        );
+        byte[] excelData = byteArrayInputStream.readAllBytes();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Disposition", "attachment; filename=equipment_report.xlsx");
+        headers.add("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=equipment.xlsx")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(in.readAllBytes());
+                .headers(headers)
+                .contentLength(excelData.length)
+                .body(excelData);
     }
 
     @GetMapping("/chart-data")
@@ -74,10 +85,69 @@ public class ResourceController {
     public Map<String, Object> getChartData(
             @ModelAttribute EquipmentFilterDTO filter,
             @RequestParam String groupByField,
-            @RequestParam String valueField) {
+            @RequestParam String valueField,
+            @RequestParam(required = false) String subGroupByField,
+            @RequestParam(defaultValue = "bar") String chartType) {
 
         List<Equipment> filteredData = equipmentService.getFilteredEquipment(filter);
-        return generateChartData(filteredData, groupByField, valueField);
+
+        Map<String, Object> chartData;
+
+        if (subGroupByField != null && !subGroupByField.isBlank()) {
+            chartData = generateGroupedStackedChartData(filteredData, groupByField, subGroupByField, valueField);
+        } else {
+            chartData = generateChartData(filteredData, groupByField, valueField);
+        }
+
+        chartData.put("chartType", chartType);
+        return chartData;
+    }
+
+    private Map<String, Object> generateGroupedStackedChartData(List<Equipment> equipment,
+                                                                String groupByField,
+                                                                String subGroupByField,
+                                                                String valueField) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        Map<String, Map<String, Double>> grouped = new LinkedHashMap<>();
+
+        for (Equipment e : equipment) {
+            String mainKey = getFieldValue(e, groupByField);
+            String subKey = getFieldValue(e, subGroupByField);
+            double value = getNumericFieldValue(e, valueField);
+
+            grouped.computeIfAbsent(subKey, k -> new LinkedHashMap<>())
+                    .merge(mainKey, value, Double::sum);
+        }
+
+        Set<String> allMainKeys = grouped.values().stream()
+                .flatMap(map -> map.keySet().stream())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        List<Map<String, Object>> datasets = new ArrayList<>();
+        for (Map.Entry<String, Map<String, Double>> entry : grouped.entrySet()) {
+            String subGroup = entry.getKey();
+            Map<String, Double> subData = entry.getValue();
+
+            List<Double> values = allMainKeys.stream()
+                    .map(k -> subData.getOrDefault(k, 0.0))
+                    .collect(Collectors.toList());
+
+            Map<String, Object> dataset = new HashMap<>();
+            dataset.put("label", subGroup);
+            dataset.put("data", values);
+            dataset.put("backgroundColor", getRandomColor());
+
+            datasets.add(dataset);
+        }
+
+        result.put("labels", new ArrayList<>(allMainKeys));
+        result.put("datasets", datasets);
+        result.put("title", String.format("%s по %s и %s",
+                getFieldDisplayName(valueField),
+                getFieldDisplayName(groupByField),
+                getFieldDisplayName(subGroupByField)));
+
+        return result;
     }
 
     private Map<String, Object> generateChartData(List<Equipment> equipment,
@@ -85,7 +155,6 @@ public class ResourceController {
                                                   String valueField) {
         Map<String, Object> result = new LinkedHashMap<>();
 
-        // Группировка данных
         Map<String, Double> groupedData = equipment.stream()
                 .filter(Objects::nonNull)
                 .collect(Collectors.groupingBy(
@@ -93,12 +162,10 @@ public class ResourceController {
                         Collectors.summingDouble(e -> getNumericFieldValue(e, valueField))
                 ));
 
-        // Сортировка по значению (по убыванию)
         List<Map.Entry<String, Double>> sortedEntries = groupedData.entrySet().stream()
                 .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
                 .collect(Collectors.toList());
 
-        // Подготовка результата
         result.put("labels", sortedEntries.stream().map(Map.Entry::getKey).collect(Collectors.toList()));
         result.put("values", sortedEntries.stream().map(Map.Entry::getValue).collect(Collectors.toList()));
         result.put("title", String.format("%s по %s",
@@ -110,60 +177,59 @@ public class ResourceController {
     }
 
     private String getFieldValue(Equipment e, String field) {
-        if (e == null || field == null) {
-            return "Не указано";
-        }
+        if (e == null || field == null) return "Не указано";
 
-        switch (field.toLowerCase()) {
-            case "type": return e.getType() != null ? e.getType() : "Не указано";
-            case "location": return e.getLocation() != null ? e.getLocation() : "Не указано";
-            case "status": return e.getStatus() != null ? e.getStatus() : "Не указано";
-            case "supplier": return e.getSupplier() != null ? e.getSupplier() : "Не указано";
-            case "purchaseyear":
-                return e.getPurchaseDate() != null ?
-                        String.valueOf(e.getPurchaseDate().getYear()) : "Не указано";
-            default: return "Неизвестное поле";
-        }
+        return switch (field.toLowerCase()) {
+            case "type" -> e.getType() != null ? e.getType() : "Не указано";
+            case "location" -> e.getLocation() != null ? e.getLocation() : "Не указано";
+            case "status" -> e.getStatus() != null ? e.getStatus() : "Не указано";
+            case "supplier" -> e.getSupplier() != null ? e.getSupplier() : "Не указано";
+            case "purchaseyear" -> e.getPurchaseDate() != null ? String.valueOf(e.getPurchaseDate().getYear()) : "Не указано";
+            default -> "Неизвестное поле";
+        };
     }
 
     private double getNumericFieldValue(Equipment e, String field) {
-        if (e == null || field == null) {
-            return 0;
-        }
+        if (e == null || field == null) return 0;
 
-        switch (field.toLowerCase()) {
-            case "cost": return e.getCost() != null ? e.getCost() : 0;
-            default: return 1; // Для подсчета количества
-        }
+        return switch (field.toLowerCase()) {
+            case "cost" -> e.getCost() != null ? e.getCost() : 0;
+            default -> 1;
+        };
     }
 
     private String getFieldDisplayName(String field) {
-        if (field == null) {
-            return "Неизвестное поле";
-        }
+        if (field == null) return "Неизвестное поле";
 
-        switch (field.toLowerCase()) {
-            case "type": return "Тип оборудования";
-            case "location": return "Локация";
-            case "status": return "Статус";
-            case "supplier": return "Поставщик";
-            case "cost": return "Стоимость";
-            case "purchaseyear": return "Год покупки";
-            default: return field;
-        }
+        return switch (field.toLowerCase()) {
+            case "type" -> "Тип оборудования";
+            case "location" -> "Локация";
+            case "status" -> "Статус";
+            case "supplier" -> "Поставщик";
+            case "cost" -> "Стоимость";
+            case "count" -> "Количество";
+            case "purchaseyear" -> "Год покупки";
+            default -> field;
+        };
+    }
+
+    private String getRandomColor() {
+        String[] colors = {
+                "#F3CAE2", "#A0D8EF", "#B0E57C", "#FFD580",
+                "#CBAACB", "#FFB7B2", "#FFDAC1", "#B5EAD7",
+                "#E2F0CB", "#FF9AA2", "#FFB347", "#77DD77"
+        };
+        return colors[new Random().nextInt(colors.length)];
     }
 
     @GetMapping("/equipment/export-pdf")
     public void exportEquipmentToPdf(HttpServletResponse response,
                                      @ModelAttribute EquipmentFilterDTO filter,
                                      @RequestParam(required = false) List<String> columns) throws IOException {
-
         response.setContentType("application/pdf");
         response.setHeader("Content-Disposition", "attachment; filename=equipment.pdf");
 
         List<Equipment> filteredEquipment = equipmentService.getFilteredEquipment(filter);
-
-        // Если не указаны колонки, используем все доступные
         if (columns == null || columns.isEmpty()) {
             columns = new ArrayList<>(EquipmentColumnsConfig.COLUMN_NAMES);
         }

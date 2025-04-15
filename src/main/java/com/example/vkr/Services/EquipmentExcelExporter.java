@@ -16,20 +16,21 @@ public class EquipmentExcelExporter {
     public static ByteArrayInputStream exportToExcel(
             List<Equipment> equipmentList,
             List<String> columns,
-            String chartType,       // "bar", "pie", "line" или null
-            String groupByField,    // поле для группировки ("type", "location" и т.д.)
-            String valueField      // "cost" или "COUNT"
+            String chartType,
+            String groupByField,
+            String valueField,
+            String subGroupByField // для stacked
     ) throws IOException {
         try (Workbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
-            // 1. Лист с данными оборудования
+            // 1. Основной лист
             Sheet dataSheet = workbook.createSheet("Оборудование");
             fillEquipmentData(workbook, dataSheet, equipmentList, columns);
 
-            // 2. Лист с графиком (если указаны параметры)
+            // 2. График
             if (chartType != null && groupByField != null && valueField != null) {
-                createChartSheet(workbook, equipmentList, chartType, groupByField, valueField);
+                createChartSheet(workbook, equipmentList, chartType, groupByField, valueField, subGroupByField);
             }
 
             workbook.write(out);
@@ -42,7 +43,7 @@ public class EquipmentExcelExporter {
             List<Equipment> equipmentList,
             List<String> columns
     ) throws IOException {
-        return exportToExcel(equipmentList, columns, null, null, null);
+        return exportToExcel(equipmentList, columns, null, null, null, null);
     }
 
     private static void createChartSheet(
@@ -50,8 +51,8 @@ public class EquipmentExcelExporter {
             List<Equipment> equipmentList,
             String chartType,
             String groupByField,
-            String valueField
-    ) {
+            String valueField,
+            String subGroupByField) {
         if (!(workbook instanceof XSSFWorkbook)) {
             throw new IllegalArgumentException("Для создания графиков требуется XSSFWorkbook");
         }
@@ -280,5 +281,21 @@ public class EquipmentExcelExporter {
         public void setTitle(String title) { this.title = title; }
         public String getDatasetLabel() { return datasetLabel; }
         public void setDatasetLabel(String datasetLabel) { this.datasetLabel = datasetLabel; }
+    }
+
+    public List<String> getAvailableCharts(int numberOfGroupingFields) {
+        List<String> availableCharts = new ArrayList<>();
+
+        // Если одно поле для группировки - добавляем круговую диаграмму
+        if (numberOfGroupingFields == 1) {
+            availableCharts.add("Pie Chart");  // Добавляем круговую диаграмму
+        }
+
+        // Добавляем другие диаграммы, например, для нескольких полей группировки
+        availableCharts.add("Bar Chart");
+        availableCharts.add("Line Chart");
+        // добавьте другие типы диаграмм по вашему усмотрению
+
+        return availableCharts;
     }
 }
