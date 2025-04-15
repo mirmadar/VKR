@@ -43,4 +43,6 @@ public class EquipmentFilterDTO {
 
     private Double costMin;
     private Double costMax;
+    private String chartType;
+    private String chartField;
 }
