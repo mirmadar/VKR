@@ -41,6 +41,7 @@ public class ResourceController {
 
     @GetMapping("/equipment/export-excel")
     public ResponseEntity<byte[]> exportToExcel(
+            @ModelAttribute EquipmentFilterDTO filter,
             @RequestParam(required = false) List<String> columns,
             @RequestParam(required = false) String chartType,
             @RequestParam(required = false) String groupByField,
@@ -48,7 +49,7 @@ public class ResourceController {
             @RequestParam(required = false) String subGroupByField
     ) throws IOException {
 
-        List<Equipment> equipmentList = equipmentService.getAllEquipment();
+        List<Equipment> equipmentList = equipmentService.getFilteredEquipment(filter);
 
         ByteArrayInputStream byteArrayInputStream;
 
@@ -110,6 +111,7 @@ public class ResourceController {
         Map<String, Object> result = new LinkedHashMap<>();
         Map<String, Map<String, Double>> grouped = new LinkedHashMap<>();
 
+        // Группируем по groupByField (например, год), потом по subGroup (например, поставщик)
         for (Equipment e : equipment) {
             String mainKey = getFieldValue(e, groupByField);
             String subKey = getFieldValue(e, subGroupByField);
@@ -119,28 +121,29 @@ public class ResourceController {
                     .merge(mainKey, value, Double::sum);
         }
 
+        // Собираем все уникальные значения groupByField для оси X (например, года)
         Set<String> allMainKeys = grouped.values().stream()
-                .flatMap(map -> map.keySet().stream())
+                .flatMap(m -> m.keySet().stream())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
         List<Map<String, Object>> datasets = new ArrayList<>();
         for (Map.Entry<String, Map<String, Double>> entry : grouped.entrySet()) {
-            String subGroup = entry.getKey();
-            Map<String, Double> subData = entry.getValue();
+            String subGroup = entry.getKey(); // Например, Поставщик А
+            Map<String, Double> dataMap = entry.getValue();
 
             List<Double> values = allMainKeys.stream()
-                    .map(k -> subData.getOrDefault(k, 0.0))
+                    .map(k -> dataMap.getOrDefault(k, 0.0))
                     .collect(Collectors.toList());
 
             Map<String, Object> dataset = new HashMap<>();
-            dataset.put("label", subGroup);
+            dataset.put("label", subGroup);  // Название подкатегории (например, поставщик)
             dataset.put("data", values);
             dataset.put("backgroundColor", getRandomColor());
 
             datasets.add(dataset);
         }
 
-        result.put("labels", new ArrayList<>(allMainKeys));
+        result.put("labels", new ArrayList<>(allMainKeys));  // Ось X — значения главной группы (например, года)
         result.put("datasets", datasets);
         result.put("title", String.format("%s по %s и %s",
                 getFieldDisplayName(valueField),

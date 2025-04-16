@@ -15,21 +15,29 @@ document.addEventListener('DOMContentLoaded', function() {
          const groupBy = groupByField.value;
          const subGroupBy = subGroupByField.value;
 
-         // Если выбраны обе группировки, исключаем круговую диаграмму
-         if (groupBy && subGroupBy) {
-             // Запрещаем выбор круговой диаграммы
-             Array.from(chartTypeSelect.options).forEach(option => {
-                 if (option.value === 'pie') {
-                     option.disabled = true;
-                 }
-             });
-         } else {
-             // Разрешаем выбор круговой диаграммы
-             Array.from(chartTypeSelect.options).forEach(option => {
-                 if (option.value === 'pie') {
-                     option.disabled = false;
-                 }
-             });
+         const optionsMap = {
+             single: ['bar', 'line', 'pie'],
+             grouped: ['bar', 'line'],
+             none: []
+         };
+
+         const availableTypes = !groupBy ? optionsMap.none :
+                               (groupBy && subGroupBy) ? optionsMap.grouped :
+                               optionsMap.single;
+
+         Array.from(chartTypeSelect.options).forEach(option => {
+             if (availableTypes.includes(option.value)) {
+                 option.disabled = false;
+                 option.hidden = false;
+             } else {
+                 option.disabled = true;
+                 option.hidden = true;
+             }
+         });
+
+         // Автоматически переключать тип, если выбранный больше недоступен
+         if (!availableTypes.includes(chartTypeSelect.value)) {
+             chartTypeSelect.value = availableTypes[0] || '';
          }
      }
 
@@ -239,23 +247,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
          // Для стэк-бар графика
          if (chartType === 'bar' && data.subGroupByField) {
-             // Группировка данных по подгруппам
-             const groupedData = groupDataBySubGroup(data.labels, data.values, data.subGroupByField);
+             const groupedData = groupDataBySubGroup(data.labels, data.values, data.subGroupByField, data.labels);
 
-             // Подготовка нескольких наборов данных для стэк-бар
-             const datasets = Object.keys(groupedData).map(subGroup => {
+             const datasets = Object.keys(groupedData).map((subGroup, idx) => {
                  return {
-                     label: subGroup,  // Название подгруппы
+                     label: subGroup,
                      data: groupedData[subGroup],
-                     backgroundColor: chartColors // Можете добавить разные цвета для разных подгрупп
+                     backgroundColor: generatePieColors(Object.keys(groupedData).length)[idx]
                  };
              });
 
              window.currentChart = new Chart(ctx, {
                  type: 'bar',
                  data: {
-                     labels: data.labels,  // метки для оси X (группировка)
-                     datasets: datasets     // Данные для графика, включая подгруппы
+                     labels: data.labels, // остаются неизменны — по groupByField
+                     datasets: datasets
                  },
                  options: {
                      responsive: true,
@@ -351,18 +357,34 @@ document.addEventListener('DOMContentLoaded', function() {
          }
      }
 
-            // Функция для группировки данных по подгруппе
-            function groupDataBySubGroup(labels, values, subGroupByField) {
-                const grouped = {};
-                labels.forEach((label, index) => {
-                    const subGroup = values[index][subGroupByField];  // предполагаем, что в данных есть это поле
-                    if (!grouped[subGroup]) {
-                        grouped[subGroup] = [];
-                    }
-                    grouped[subGroup].push(values[index].value); // значение из нужного поля
-                });
-                return grouped;
-            }
+     // Функция для группировки данных по подгруппе
+     function groupDataBySubGroup(labels, values, subGroupByField, groupByLabels) {
+         const subGroups = new Set();
+         const grouped = {};
+
+         // Сначала определить все подгруппы
+         values.forEach(item => {
+             subGroups.add(item[subGroupByField]);
+         });
+
+         // Инициализируем нулями по всем значениям groupBy
+         subGroups.forEach(subGroup => {
+             grouped[subGroup] = groupByLabels.map(() => 0);
+         });
+
+         // Теперь распределяем значения по соответствующим позициям
+         values.forEach((item, index) => {
+             const subGroup = item[subGroupByField];
+             const groupValue = labels[index];
+             const labelIndex = groupByLabels.indexOf(groupValue);
+             if (labelIndex !== -1) {
+                 grouped[subGroup][labelIndex] = item.value;
+             }
+         });
+
+         return grouped;
+     }
+
 
     function generatePieColors(num) {
         const colors = [];

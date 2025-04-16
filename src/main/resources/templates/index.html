@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,17 +8,31 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header>
-  <h1>Добро пожаловать, <span th:text="${user.username}"></span>!</h1> <!-- Имя пользователя -->
-  <nav>
-    <a href="/logout">Выйти</a> |
-  </nav>
-</header>
+<div class="auth-container">
+  <!-- Левая панель с данными пользователя -->
+  <section class="info-section">
+    <h1>Добро пожаловать, <span th:text="${user.username}"></span>!</h1>
+    <p><strong>Имя пользователя:</strong> <span th:text="${user.username}"></span></p>
+    <p><strong>Электронная почта:</strong> <span th:text="${user.email}"></span></p>
+    <div class="features">
+      <div class="feature-item">Доступ к аналитике</div>
+      <div class="feature-item">Экспорт отчетов</div>
+      <div class="feature-item">Настройки профиля</div>
+    </div>
+    <nav class="auth-links">
+      <a href="/logout">Выйти</a>
+    </nav>
+  </section>
 
-<main>
-  <h2>Ваш профиль:</h2>
-  <p>Имя пользователя: <span th:text="${user.username}"></span></p> <!-- Имя пользователя -->
-  <p>Электронная почта: <span th:text="${user.email}"></span></p> <!-- Почта пользователя -->
-</main>
+  <!-- Правая панель с дашбордами -->
+  <section class="form-section">
+    <h2>Аналитика и дашборды</h2>
+    <div>
+      <!-- Здесь можно вставить Thymeleaf шаблоны, графики, SVG или изображения отчетов -->
+      <p>Выберите параметры для отображения данных.</p>
+      <div th:replace="fragments/dashboard :: dashboardContent"></div>
+    </div>
+  </section>
+</div>
 </body>
 </html>
