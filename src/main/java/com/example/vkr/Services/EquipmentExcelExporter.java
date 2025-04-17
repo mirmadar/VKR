@@ -26,7 +26,7 @@ public class EquipmentExcelExporter {
         try (Workbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
-            // 1. Основной лист
+            // 1. Основной лист с данными
             Sheet dataSheet = workbook.createSheet("Оборудование");
             fillEquipmentData(workbook, dataSheet, equipmentList, columns);
 
@@ -142,13 +142,10 @@ public class EquipmentExcelExporter {
             String valueField
     ) {
         Map<String, Map<String, Double>> result = new LinkedHashMap<>();
-
-        // Сначала собираем все возможные подкатегории
         Set<String> allSubCategories = equipmentList.stream()
                 .map(e -> String.valueOf(EquipmentFieldUtil.getGroupingValue(e, subGroupByField)))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
-        // Инициализируем все группы с нулевыми значениями для всех подкатегорий
         equipmentList.stream()
                 .map(e -> String.valueOf(EquipmentFieldUtil.getGroupingValue(e, groupByField)))
                 .distinct()
@@ -158,12 +155,10 @@ public class EquipmentExcelExporter {
                     result.put(mainCat, subMap);
                 });
 
-        // Заполняем реальными значениями
         for (Equipment equipment : equipmentList) {
             String mainCat = String.valueOf(EquipmentFieldUtil.getGroupingValue(equipment, groupByField));
             String subCat = String.valueOf(EquipmentFieldUtil.getGroupingValue(equipment, subGroupByField));
             Double value = EquipmentFieldUtil.getChartValue(equipment, valueField);
-
             result.get(mainCat).merge(subCat, value, Double::sum);
         }
 
@@ -176,14 +171,11 @@ public class EquipmentExcelExporter {
             String valueField
     ) {
         Map<String, Double> result = new LinkedHashMap<>();
-
         for (Equipment equipment : equipmentList) {
             String groupKey = String.valueOf(EquipmentFieldUtil.getGroupingValue(equipment, groupByField));
             Double value = EquipmentFieldUtil.getChartValue(equipment, valueField);
-
             result.merge(groupKey, value, Double::sum);
         }
-
         return result;
     }
 
@@ -219,28 +211,12 @@ public class EquipmentExcelExporter {
             for (int j = 0; j < columnsToExport.size(); j++) {
                 String columnName = columnsToExport.get(j);
                 Object value = EquipmentColumnsConfig.COLUMN_MAPPERS.get(columnName).apply(eq);
-                setCellValue(row.createCell(j), value, dateStyle, numberStyle);
+                ExcelStyleUtil.setCellValue(row.createCell(j), value, dateStyle, numberStyle);
             }
         }
 
         for (int i = 0; i < columnsToExport.size(); i++) {
             sheet.autoSizeColumn(i);
-        }
-    }
-
-    private static void setCellValue(Cell cell, Object value, CellStyle dateStyle, CellStyle numberStyle) {
-        if (value == null) {
-            cell.setCellValue("");
-            return;
-        }
-        if (value instanceof Date) {
-            cell.setCellValue((Date) value);
-            cell.setCellStyle(dateStyle);
-        } else if (value instanceof Number) {
-            cell.setCellValue(((Number) value).doubleValue());
-            cell.setCellStyle(numberStyle);
-        } else {
-            cell.setCellValue(value.toString());
         }
     }
 }

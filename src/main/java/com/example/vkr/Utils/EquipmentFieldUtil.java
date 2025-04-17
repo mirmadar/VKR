@@ -2,13 +2,11 @@ package com.example.vkr.Utils;
 
 import com.example.vkr.Models.Equipment;
 
-import java.lang.reflect.Field;
-import java.text.SimpleDateFormat;
-
 public class EquipmentFieldUtil {
 
     public static Object getGroupingValue(Equipment equipment, String fieldName) {
-        // реализация получения значения поля для группировки
+        if (fieldName == null || equipment == null) return "Неизвестное поле";
+
         switch (fieldName.toLowerCase()) {
             case "type":
                 return equipment.getType();
@@ -19,39 +17,44 @@ public class EquipmentFieldUtil {
             case "supplier":
                 return equipment.getSupplier();
             case "purchaseyear":
-                return equipment.getPurchaseDate() != null ?
-                        String.valueOf(equipment.getPurchaseDate().getYear()) :
-                        "Не указан";
+                return equipment.getPurchaseDate() != null ? String.valueOf(equipment.getPurchaseDate().getYear()) : "Не указан";
             default:
                 return "Неизвестное поле";
         }
     }
 
     public static Double getChartValue(Equipment equipment, String valueField) {
-        // реализация получения числового значения для графика
-        if (valueField == null) return 0.0;
+        if (valueField == null || equipment == null) return 0.0;
 
         switch (valueField.toLowerCase()) {
             case "cost":
                 return equipment.getCost() != null ? equipment.getCost() : 0.0;
             default:
-                return 1.0; // для подсчета количества
+                return 1.0; // Для подсчета количества
         }
     }
 
     public static String getFieldDisplayName(String field) {
         if (field == null) return "Неизвестное поле";
 
-        return switch (field.toLowerCase()) {
-            case "type" -> "Тип оборудования";
-            case "location" -> "Локация";
-            case "status" -> "Статус";
-            case "supplier" -> "Поставщик";
-            case "cost" -> "Стоимость";
-            case "count" -> "Количество";
-            case "purchaseyear" -> "Год покупки";
-            default -> field;
-        };
+        switch (field.toLowerCase()) {
+            case "type":
+                return "Тип оборудования";
+            case "location":
+                return "Локация";
+            case "status":
+                return "Статус";
+            case "supplier":
+                return "Поставщик";
+            case "cost":
+                return "Стоимость";
+            case "count":
+                return "Количество";
+            case "purchaseyear":
+                return "Год покупки";
+            default:
+                return field; // Возвращаем исходное имя, если оно не найдено
+        }
     }
 
     public static String getValueDisplayName(String valueField) {
