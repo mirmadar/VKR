@@ -1,9 +1,11 @@
 package com.example.vkr.Controllers;
 
 import com.example.vkr.Config.EquipmentColumnsConfig;
+import com.example.vkr.DTO.AnalyticsInfoDTO;
 import com.example.vkr.DTO.EquipmentFilterDTO;
 import com.example.vkr.Models.Equipment;
 import com.example.vkr.Services.*;
+import com.example.vkr.Utils.EquipmentAnalyticsUtil;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -11,14 +13,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/resources")
@@ -69,17 +68,36 @@ public class ResourceController {
                                                 @RequestParam(required = false) String chartType,
                                                 @RequestParam(required = false) String groupByField,
                                                 @RequestParam(required = false) String valueField,
-                                                @RequestParam(required = false) String subGroupByField) throws IOException {
+                                                @RequestParam(required = false) String subGroupByField,
+                                                @RequestParam(required = false) List<String> analyticsFields) throws IOException {
 
         List<Equipment> equipmentList = equipmentService.getFilteredEquipment(filter);
 
+        List<AnalyticsInfoDTO> analytics = new ArrayList<>();
+        if (analyticsFields != null) {
+            if (analyticsFields.contains("warranty")) {
+                analytics.addAll(EquipmentAnalyticsUtil.buildWarrantyAnalytics(equipmentList));
+            }
+            // Добавить другие типы по мере появления
+        }
+
+        List<String> exportColumns;
+        if (columns != null) {
+            exportColumns = columns;
+        } else {
+            exportColumns = new ArrayList<>();
+            exportColumns.addAll(EquipmentColumnsConfig.COLUMN_MAPPERS.keySet());
+            exportColumns.addAll(EquipmentColumnsConfig.ANALYTICS_DISPLAY_NAMES.keySet());
+        }
+
         byte[] excelData = equipmentExcelService.export(
                 equipmentList,
-                columns != null ? columns : new ArrayList<>(EquipmentColumnsConfig.COLUMN_MAPPERS.keySet()),
+                exportColumns,
                 chartType,
                 groupByField,
                 valueField,
-                subGroupByField
+                subGroupByField,
+                analytics
         );
 
         HttpHeaders headers = new HttpHeaders();
@@ -91,6 +109,7 @@ public class ResourceController {
                 .contentLength(excelData.length)
                 .body(excelData);
     }
+
 
     @GetMapping("/equipment/export-pdf")
     public void exportEquipmentToPdf(HttpServletResponse response,

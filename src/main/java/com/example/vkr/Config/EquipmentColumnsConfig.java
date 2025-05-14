@@ -2,7 +2,9 @@ package com.example.vkr.Config;
 
 import com.example.vkr.Models.Equipment;
 
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -10,7 +12,6 @@ import java.util.function.Function;
 
 public class EquipmentColumnsConfig {
 
-    // Только те, что отображаются в таблице и в чекбоксах выбора колонок
     public static final Map<String, String> COLUMN_DISPLAY_NAMES = new LinkedHashMap<>() {{
         put("name", "Название");
         put("type", "Тип оборудования");
@@ -24,10 +25,17 @@ public class EquipmentColumnsConfig {
         put("status", "Статус");
         put("supplier", "Поставщик");
         put("cost", "Стоимость");
-        // ❌ НЕ добавляем "purchaseYear" — он не нужен в таблице
     }};
 
-    // Все поля, в т.ч. "purchaseYear" — для графиков, экспорта и т.д.
+    public static final Map<String, String> ANALYTICS_DISPLAY_NAMES = new LinkedHashMap<>() {{
+        put("remainingWarrantyYears", "До окончания гарантии (лет)");
+        put("remainingWarrantyComment", "Комментарий по гарантии");
+    }};
+
+    public static final Map<String, String> ANALYTICS_STRING_MAPPERS = new LinkedHashMap<>() {{
+
+    }};
+
     public static final Map<String, Function<Equipment, Object>> COLUMN_MAPPERS = new LinkedHashMap<>() {{
         put("name", Equipment::getName);
         put("type", Equipment::getType);
@@ -41,7 +49,7 @@ public class EquipmentColumnsConfig {
         put("status", Equipment::getStatus);
         put("supplier", Equipment::getSupplier);
         put("cost", Equipment::getCost);
-        put("purchaseYear", e -> e.getPurchaseDate() != null ? e.getPurchaseDate().getYear() : null); // ✅ оставляем
+        put("purchaseYear", e -> e.getPurchaseDate() != null ? e.getPurchaseDate().getYear() : null);
     }};
 
     public static final Map<String, Function<Equipment, String>> COLUMN_STRING_MAPPERS = new LinkedHashMap<>() {{
@@ -58,7 +66,7 @@ public class EquipmentColumnsConfig {
         put("status", e -> safe(e.getStatus()));
         put("supplier", e -> safe(e.getSupplier()));
         put("cost", e -> e.getCost() != null ? String.format(Locale.US, "%.2f", e.getCost()) : "");
-        // не включаем "purchaseYear"
+        // ❌ УБРАНЫ remainingWarrantyXXX
     }};
 
     private static String safe(String s) {

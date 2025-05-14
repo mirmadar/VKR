@@ -1,415 +1,303 @@
-document.addEventListener('DOMContentLoaded', function() {
-     // Ваш JavaScript код
-     const checkboxes = document.querySelectorAll('.form-check-input[type="checkbox"]');
-     const selectAllBtn = document.getElementById('selectAllBtn');
-     const deselectAllBtn = document.getElementById('deselectAllBtn');
-     const exportBtn = document.getElementById('exportBtn');
-     const exportPdfBtn = document.getElementById('exportPdfBtn');
-     const generateChartBtn = document.getElementById('generateChartBtn');
-     const chartContainer = document.getElementById('chartContainer');
+document.addEventListener('DOMContentLoaded', function () {
+    const checkboxes = document.querySelectorAll('.form-check-input[type="checkbox"]');
+    const selectAllBtn = document.getElementById('selectAllBtn');
+    const deselectAllBtn = document.getElementById('deselectAllBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    const exportPdfBtn = document.getElementById('exportPdfBtn');
+    const generateChartBtn = document.getElementById('generateChartBtn');
+    const chartContainer = document.getElementById('chartContainer');
 
-     let currentChart = null;
+    window.currentChart = null;
 
-     // ==================== Управление колонками ====================
-     function updateChartTypeOptions() {
-         const groupBy = groupByField.value;
-         const subGroupBy = subGroupByField.value;
+    // ==================== Колонки ====================
+    function updateColumnVisibility(columnName, isVisible) {
+        const displayValue = isVisible ? '' : 'none';
+        document.querySelectorAll(`[data-column="${columnName}"]`).forEach(el => {
+            el.style.display = displayValue;
+        });
+    }
 
-         const optionsMap = {
-             single: ['bar', 'line', 'pie'],
-             grouped: ['bar', 'line'],
-             none: []
-         };
+    checkboxes.forEach(checkbox => {
+        updateColumnVisibility(checkbox.dataset.column, checkbox.checked);
+        checkbox.addEventListener('change', function () {
+            updateColumnVisibility(this.dataset.column, this.checked);
+        });
+    });
 
-         const availableTypes = !groupBy ? optionsMap.none :
-                               (groupBy && subGroupBy) ? optionsMap.grouped :
-                               optionsMap.single;
+    selectAllBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = true;
+            updateColumnVisibility(checkbox.dataset.column, true);
+        });
+    });
 
-         Array.from(chartTypeSelect.options).forEach(option => {
-             if (availableTypes.includes(option.value)) {
-                 option.disabled = false;
-                 option.hidden = false;
-             } else {
-                 option.disabled = true;
-                 option.hidden = true;
-             }
-         });
+    deselectAllBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false;
+            updateColumnVisibility(checkbox.dataset.column, false);
+        });
+    });
 
-         // Автоматически переключать тип, если выбранный больше недоступен
-         if (!availableTypes.includes(chartTypeSelect.value)) {
-             chartTypeSelect.value = availableTypes[0] || '';
-         }
-     }
+    // ==================== Экспорт ====================
+    function getSelectedColumns() {
+        return Array.from(document.querySelectorAll('.form-check-input[type="checkbox"]:checked'))
+            .filter(cb => cb.dataset.column && cb.id !== 'includeChartInExport')
+            .map(cb => cb.dataset.column);
+    }
 
-     // Слушаем изменения на полях группировки
-     const groupByField = document.getElementById('groupByField');
-     const subGroupByField = document.getElementById('subGroupByField');
-     const chartTypeSelect = document.getElementById('chartType');
+    function getSelectedAnalyticsFields() {
+        return Array.from(document.querySelectorAll('.analytics-checkbox:checked'))
+            .map(cb => cb.value);
+    }
 
-     groupByField.addEventListener('change', updateChartTypeOptions);
-     subGroupByField.addEventListener('change', updateChartTypeOptions);
+    exportBtn.addEventListener('click', function () {
+        const selectedColumns = getSelectedColumns();
+        const analyticsFields = getSelectedAnalyticsFields();
 
-     // Инициализируем сразу
-     updateChartTypeOptions();
+        if (analyticsFields.includes('warranty')) {
+            if (!selectedColumns.includes('remainingWarrantyYears')) {
+                selectedColumns.push('remainingWarrantyYears');
+            }
+            if (!selectedColumns.includes('remainingWarrantyComment')) {
+                selectedColumns.push('remainingWarrantyComment');
+            }
+        }
 
-     // ==================== Видимость колонок ====================
-     function updateColumnVisibility(columnName, isVisible) {
-         const displayValue = isVisible ? '' : 'none';
-         document.querySelectorAll(`[data-column="${columnName}"]`).forEach(el => {
-             el.style.display = displayValue;
-         });
-     }
+        const params = new URLSearchParams();
+        selectedColumns.forEach(col => params.append('columns', col));
+        analyticsFields.forEach(field => params.append('analyticsFields', field));
 
-     // Инициализация видимости колонок
-     checkboxes.forEach(checkbox => {
-         updateColumnVisibility(checkbox.dataset.column, checkbox.checked);
+        const includeChart = document.getElementById('includeChartInExport')?.checked;
+        if (includeChart) {
+            const chartType = document.getElementById('chartType').value;
+            const groupByField = document.getElementById('groupByField').value;
+            const subGroupByField = document.getElementById('subGroupByField').value;
+            const valueField = document.getElementById('valueField').value;
 
-         checkbox.addEventListener('change', function() {
-             updateColumnVisibility(this.dataset.column, this.checked);
-         });
-     });
+            if (chartType && groupByField && valueField) {
+                params.append('chartType', chartType);
+                params.append('groupByField', groupByField);
+                if (subGroupByField) {
+                    params.append('subGroupByField', subGroupByField);
+                }
+                params.append('valueField', valueField);
+            }
+        }
 
-     // Кнопки "Выбрать все"/"Сбросить"
-     selectAllBtn.addEventListener('click', function(e) {
-         e.preventDefault();
-         checkboxes.forEach(checkbox => {
-             checkbox.checked = true;
-             updateColumnVisibility(checkbox.dataset.column, true);
-         });
-     });
+        const filterForm = document.getElementById('filtersForm');
+        if (filterForm) {
+            new FormData(filterForm).forEach((value, key) => {
+                if (value) params.append(key, value);
+            });
+        }
 
-     deselectAllBtn.addEventListener('click', function(e) {
-         e.preventDefault();
-         checkboxes.forEach(checkbox => {
-             checkbox.checked = false;
-             updateColumnVisibility(checkbox.dataset.column, false);
-         });
-     });
+        window.location.href = '/resources/equipment/export-excel?' + params.toString();
+    });
 
-     // ==================== Экспорт данных ====================
-     function getExportParams() {
-         const selectedColumns = Array.from(document.querySelectorAll('.form-check-input[type="checkbox"]:checked'))
-             .filter(checkbox => checkbox.dataset.column && checkbox.id !== 'includeChartInExport')
-             .map(checkbox => checkbox.dataset.column);
+    exportPdfBtn?.addEventListener('click', function () {
+        const params = new URLSearchParams();
+        getSelectedColumns().forEach(col => params.append('columns', col));
+        window.location.href = '/resources/equipment/export-pdf?' + params.toString();
+    });
 
-         if (selectedColumns.length === 0) {
-             alert('Пожалуйста, выберите хотя бы одну колонку для экспорта');
-             return null;
-         }
+    // ==================== Графики ====================
+    const groupByField = document.getElementById('groupByField');
+    const subGroupByField = document.getElementById('subGroupByField');
+    const chartTypeSelect = document.getElementById('chartType');
 
-         const params = new URLSearchParams();
-         const filterForm = document.getElementById('filtersForm');
+    groupByField.addEventListener('change', updateChartTypeOptions);
+    subGroupByField.addEventListener('change', updateChartTypeOptions);
+    updateChartTypeOptions();
 
-         // Добавляем параметры фильтрации
-         if (filterForm) {
-             new FormData(filterForm).forEach((value, key) => {
-                 if (value) params.append(key, value);
-             });
-         }
+    function updateChartTypeOptions() {
+        const groupBy = groupByField.value;
+        const subGroupBy = subGroupByField.value;
 
-         // Добавляем выбранные колонки
-         selectedColumns.forEach(col => params.append('columns', col));
+        const optionsMap = {
+            single: ['bar', 'line', 'pie'],
+            grouped: ['bar', 'line'],
+            none: []
+        };
 
-         // Добавляем параметры графика, если включена опция
-         const includeChart = document.getElementById('includeChartInExport').checked;
-         if (includeChart) {
-             const chartType = document.getElementById('chartType').value;
-             const groupByField = document.getElementById('groupByField').value;
-             const subGroupByField = document.getElementById('subGroupByField').value;
-             const valueField = document.getElementById('valueField').value;
+        const availableTypes = !groupBy ? optionsMap.none :
+            (groupBy && subGroupBy) ? optionsMap.grouped :
+                optionsMap.single;
 
-             if (chartType && groupByField && valueField) {
-                 params.append('chartType', chartType);
-                 params.append('groupByField', groupByField);
-                 if (subGroupByField) {
-                     params.append('subGroupByField', subGroupByField); // добавляем второй параметр
-                 }
-                 params.append('valueField', valueField);
-             }
-         }
+        Array.from(chartTypeSelect.options).forEach(option => {
+            option.disabled = !availableTypes.includes(option.value);
+            option.hidden = !availableTypes.includes(option.value);
+        });
 
-         return params;
-     }
+        if (!availableTypes.includes(chartTypeSelect.value)) {
+            chartTypeSelect.value = availableTypes[0] || '';
+        }
+    }
 
-     // Обработчики кнопок экспорта
-     exportBtn.addEventListener('click', function() {
-         const params = getExportParams();
-         if (params) {
-             window.location.href = `/resources/equipment/export-excel?${params.toString()}`;
-         }
-     });
+    generateChartBtn.addEventListener('click', generateChart);
 
-     exportPdfBtn.addEventListener('click', function() {
-         const params = getExportParams();
-         if (params) {
-             window.location.href = `/resources/equipment/export-pdf?${params.toString()}`;
-         }
-     });
+    async function generateChart() {
+        const params = new URLSearchParams();
+        const groupBy = groupByField.value;
+        const subGroupBy = subGroupByField.value;
+        const valueField = document.getElementById('valueField').value;
 
-     // ==================== Работа с графиками ====================
-     generateChartBtn.addEventListener('click', generateChart);
+        if (!groupBy) {
+            alert('Выберите поле группировки');
+            return;
+        }
 
-     async function generateChart() {
-         const groupByField = document.getElementById('groupByField').value;
-         const subGroupByField = document.getElementById('subGroupByField').value;
-         const valueField = document.getElementById('valueField').value;
-         const chartType = document.getElementById('chartType').value;
+        params.append('groupByField', groupBy);
+        if (subGroupBy) params.append('subGroupByField', subGroupBy);
+        params.append('valueField', valueField);
 
-         // Валидация
-         if (!groupByField) {
-             showChartError('Пожалуйста, выберите поле для группировки');
-             return;
-         }
+        const filterForm = document.getElementById('filtersForm');
+        if (filterForm) {
+            new FormData(filterForm).forEach((value, key) => {
+                if (value) params.append(key, value);
+            });
+        }
 
-         try {
-             showChartLoading();
+        const response = await fetch(`/resources/chart-data?${params.toString()}`);
+        if (!response.ok) {
+            alert('Ошибка загрузки данных');
+            return;
+        }
 
-             const params = new URLSearchParams();
-             params.append('groupByField', groupByField);
-             if (subGroupByField) {
-                 params.append('subGroupByField', subGroupByField); // добавляем второй параметр
-             }
-             params.append('valueField', valueField);
+        const data = await response.json();
+        renderChart(data, chartTypeSelect.value);
+    }
 
-             // Добавляем параметры фильтрации
-             const filterForm = document.getElementById('filtersForm');
-             if (filterForm) {
-                 new FormData(filterForm).forEach((value, key) => {
-                     if (value) params.append(key, value);
-                 });
-             }
+    function sortLabelsAndValues(labels, values) {
+        const paired = labels.map((label, idx) => ({ label, value: values[idx] }));
+        paired.sort((a, b) => {
+            const aNum = Number(a.label);
+            const bNum = Number(b.label);
+            return !isNaN(aNum) && !isNaN(bNum)
+                ? aNum - bNum
+                : a.label.localeCompare(b.label);
+        });
 
-             // Запрос данных
-             const response = await fetch(`/resources/chart-data?${params.toString()}`);
-
-             if (!response.ok) {
-                 throw new Error(`Ошибка сервера: ${response.status}`);
-             }
-
-             const chartData = await response.json();
-             renderChart(chartData, chartType);
-
-         } catch (error) {
-             console.error("Ошибка при создании графика:", error);
-             showChartError(`Ошибка при загрузке данных: ${error.message}`);
-         }
-     }
-
-     function showChartLoading() {
-         chartContainer.innerHTML = `
-             <div class="chart-loading">
-                 <div class="spinner-border text-primary" role="status"></div>
-                 <p class="mt-2">Загрузка данных...</p>
-             </div>
-             <canvas id="analyticsChart" style="display: none"></canvas>
-         `;
-     }
-
-     function showChartError(message) {
-         const canvas = chartContainer.querySelector('#analyticsChart');
-         if (canvas) {
-             canvas.style.display = 'none';
-         }
-
-         const errorDiv = document.createElement('div');
-         errorDiv.className = 'alert alert-danger';
-         errorDiv.textContent = message;
-
-         chartContainer.insertBefore(errorDiv, chartContainer.firstChild);
-
-         setTimeout(() => {
-             errorDiv.remove();
-         }, 5000);
-     }
-
-     function renderChart(data, chartType) {
-         // Очищаем контейнер
-         chartContainer.innerHTML = '<canvas id="analyticsChart"></canvas>';
-         const ctx = document.getElementById('analyticsChart').getContext('2d');
-
-         // Удаляем предыдущий график
-         if (window.currentChart) {
-             window.currentChart.destroy();
-         }
-
-         // Настройка адаптивности
-         ctx.canvas.style.width = '100%';
-         ctx.canvas.style.height = '400px';
-         ctx.canvas.width = ctx.canvas.offsetWidth;
-         ctx.canvas.height = ctx.canvas.offsetHeight;
-
-         const mainColor = '#F3CAE2';
-
-         // Выбор цветов для графика
-         const chartColors = chartType === 'pie'
-             ? generatePieColors(data.values.length) // Убедитесь, что передаете правильное количество
-             : [mainColor];
-
-         // Для стэк-бар графика
-         if (chartType === 'bar' && data.subGroupByField) {
-             const groupedData = groupDataBySubGroup(data.labels, data.values, data.subGroupByField, data.labels);
-
-             const datasets = Object.keys(groupedData).map((subGroup, idx) => {
-                 return {
-                     label: subGroup,
-                     data: groupedData[subGroup],
-                     backgroundColor: generatePieColors(Object.keys(groupedData).length)[idx]
-                 };
-             });
-
-             window.currentChart = new Chart(ctx, {
-                 type: 'bar',
-                 data: {
-                     labels: data.labels, // остаются неизменны — по groupByField
-                     datasets: datasets
-                 },
-                 options: {
-                     responsive: true,
-                     maintainAspectRatio: false,
-                     plugins: {
-                         title: {
-                             display: true,
-                             text: data.title || 'Анализ данных',
-                             font: { size: 16 }
-                         },
-                         legend: {
-                             position: 'top',
-                         },
-                         tooltip: {
-                             callbacks: {
-                                 label: function(context) {
-                                     const label = context.label || '';
-                                     const value = context.parsed.y;
-                                     return `${label}: ${Number(value).toLocaleString()}`;
-                                 }
-                             }
-                         }
-                     },
-                     scales: {
-                         y: {
-                             beginAtZero: true,
-                             stacked: true, // Включаем stacked bar
-                             ticks: {
-                                 callback: function(value) {
-                                     return Number(value).toLocaleString();
-                                 }
-                             }
-                         }
-                     },
-                     animation: {
-                         duration: data.labels.length > 20 ? 0 : 1000
-                     }
-                 }
-             });
-         } else {
-         // === СОРТИРОВКА ПО labels (по возрастанию) ===
-         if (Array.isArray(data.labels) && Array.isArray(data.values)) {
-             // Определим, с подгруппами или нет
-             if (!data.subGroupByField) {
-                 const combined = data.labels.map((label, index) => ({
-                     label,
-                     value: data.values[index]
-                 }));
-
-                 // Сортируем по label (по возрастанию)
-                 combined.sort((a, b) => {
-                     const aNum = Number(a.label);
-                     const bNum = Number(b.label);
-                     return isNaN(aNum) || isNaN(bNum)
-                         ? a.label.localeCompare(b.label, undefined, { numeric: true })
-                         : aNum - bNum;
-                 });
-
-                 data.labels = combined.map(item => item.label);
-                 data.values = combined.map(item => item.value);
-             }
-         }
-
-             // Простое отображение для других типов графиков
-             window.currentChart = new Chart(ctx, {
-                 type: chartType,
-                 data: {
-                     labels: data.labels || [],  // метки для оси X (группировка)
-                     datasets: data.datasets || [{
-                         label: data.datasetLabel || 'Данные',
-                         data: data.values || [],
-                         backgroundColor: chartColors
-                     }]
-                 },
-                 options: {
-                     responsive: true,
-                     maintainAspectRatio: false,
-                     plugins: {
-                         title: {
-                             display: true,
-                             text: data.title || 'Анализ данных',
-                             font: { size: 16 }
-                         },
-                         legend: {
-                             position: chartType === 'pie' ? 'right' : 'top',
-                         },
-                         tooltip: {
-                             callbacks: {
-                                 label: function(context) {
-                                     const label = context.label || '';
-                                     const value = context.parsed;
-                                     return `${label}: ${Number(value).toLocaleString()}`;
-                                 }
-                             }
-                         }
-                     },
-                     scales: chartType !== 'pie' ? {
-                         x: {
-                             stacked: true
-                         },
-                         y: {
-                             beginAtZero: true,
-                             stacked: true,
-                             ticks: {
-                                 callback: function(value) {
-                                     return Number(value).toLocaleString();
-                                 }
-                             }
-                         }
-                     } : undefined,
-                     animation: {
-                         duration: data.labels.length > 20 ? 0 : 1000
-                     }
-                 }
-             });
-         }
-     }
-
-     // Функция для группировки данных по подгруппе
-     function groupDataBySubGroup(labels, values, subGroupByField, groupByLabels) {
-         const subGroups = new Set();
-         const grouped = {};
-
-         // Сначала определить все подгруппы
-         values.forEach(item => {
-             subGroups.add(item[subGroupByField]);
-         });
-
-         // Инициализируем нулями по всем значениям groupBy
-         subGroups.forEach(subGroup => {
-             grouped[subGroup] = groupByLabels.map(() => 0);
-         });
-
-         // Теперь распределяем значения по соответствующим позициям
-         values.forEach((item, index) => {
-             const subGroup = item[subGroupByField];
-             const groupValue = labels[index];
-             const labelIndex = groupByLabels.indexOf(groupValue);
-             if (labelIndex !== -1) {
-                 grouped[subGroup][labelIndex] = item.value;
-             }
-         });
+        return {
+            labels: paired.map(p => p.label),
+            values: paired.map(p => p.value)
+        };
+    }
 
 
+function renderChart(data, chartType) {
+    chartContainer.innerHTML = '<canvas id="analyticsChart"></canvas>';
+    const ctx = document.getElementById('analyticsChart').getContext('2d');
 
-         return grouped;
-     }
+    if (window.currentChart) {
+        window.currentChart.destroy();
+    }
 
+    ctx.canvas.style.width = '100%';
+    ctx.canvas.style.height = '400px';
+    ctx.canvas.width = ctx.canvas.offsetWidth;
+    ctx.canvas.height = ctx.canvas.offsetHeight;
+
+    const mainColor = '#F3CAE2';
+    const chartColors = chartType === 'pie'
+        ? generatePieColors((data.values || []).length)
+        : [mainColor];
+
+    if (data.datasets) {
+        // ← Стековый график (уже собранный)
+        window.currentChart = new Chart(ctx, {
+            type: chartType,
+            data: {
+                labels: data.labels,
+                datasets: data.datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: data.title || 'Анализ данных',
+                        font: { size: 16 }
+                    },
+                    legend: { position: 'top' },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                const label = context.dataset.label || '';
+                                const value = context.parsed.y;
+                                return `${label}: ${Number(value).toLocaleString()}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { stacked: true },
+                    y: {
+                        beginAtZero: true,
+                        stacked: true,
+                        ticks: {
+                            callback: function (value) {
+                                return Number(value).toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    } else {
+        // ← Обычный график (без подгрупп)
+        const sorted = sortLabelsAndValues(data.labels || [], data.values || []);
+
+        window.currentChart = new Chart(ctx, {
+            type: chartType,
+            data: {
+                labels: sorted.labels,
+                datasets: [{
+                    label: data.datasetLabel || 'Данные',
+                    data: sorted.values,
+                    backgroundColor: chartColors
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: data.title || 'Анализ данных',
+                        font: { size: 16 }
+                    },
+                    legend: {
+                        position: chartType === 'pie' ? 'right' : 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                const label = context.label || '';
+                                const value = context.parsed;
+                                return `${label}: ${Number(value).toLocaleString()}`;
+                            }
+                        }
+                    }
+                },
+                scales: chartType !== 'pie' ? {
+                    x: { stacked: true },
+                    y: {
+                        beginAtZero: true,
+                        stacked: true,
+                        ticks: {
+                            callback: function (value) {
+                                return Number(value).toLocaleString();
+                            }
+                        }
+                    }
+                } : undefined
+            }
+        });
+    }
+}
 
     function generatePieColors(num) {
         const colors = [];
@@ -418,4 +306,4 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         return colors;
     }
-    });
+});

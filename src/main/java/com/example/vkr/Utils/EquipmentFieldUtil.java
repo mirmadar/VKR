@@ -2,34 +2,31 @@ package com.example.vkr.Utils;
 
 import com.example.vkr.Config.EquipmentColumnsConfig;
 import com.example.vkr.Models.Equipment;
+import org.apache.poi.ss.usermodel.*;
 
-import java.time.format.DateTimeFormatter;
-import java.util.Locale;
 import java.util.Map;
+import java.util.function.Function;
 
 public class EquipmentFieldUtil {
-
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     public static Object getGroupingValue(Equipment equipment, String fieldName) {
         if (fieldName == null || equipment == null) return "Неизвестное поле";
 
-        switch (fieldName.toLowerCase()) {
-            case "type":
-                return equipment.getType();
-            case "location":
-                return equipment.getLocation();
-            case "status":
-                return equipment.getStatus();
-            case "supplier":
-                return equipment.getSupplier();
-            case "purchaseyear":
-                return equipment.getPurchaseDate() != null
-                        ? String.valueOf(equipment.getPurchaseDate().getYear())
-                        : "Не указан";
-            default:
-                return "Неизвестное поле";
+        // Поддержка поля "purchaseYear", которого нет в COLUMN_DISPLAY_NAMES, но есть в COLUMN_MAPPERS
+        if ("purchaseyear".equalsIgnoreCase(fieldName)) {
+            return equipment.getPurchaseDate() != null
+                    ? String.valueOf(equipment.getPurchaseDate().getYear())
+                    : "Не указан";
         }
+
+        // Используем общий маппер
+        Function<Equipment, Object> mapper = EquipmentColumnsConfig.COLUMN_MAPPERS.get(fieldName);
+        if (mapper != null) {
+            Object value = mapper.apply(equipment);
+            return value != null ? value : "Не указан";
+        }
+
+        return "Неизвестное поле";
     }
 
     public static Double getChartValue(Equipment equipment, String valueField) {
@@ -46,49 +43,65 @@ public class EquipmentFieldUtil {
     public static String getFieldDisplayName(String field) {
         if (field == null) return "Неизвестное поле";
 
-        // Пробуем взять из глобального конфига
-        Map<String, String> displayNames = EquipmentColumnsConfig.COLUMN_DISPLAY_NAMES;
-        return displayNames.getOrDefault(field, switch (field.toLowerCase()) {
+        // Сначала ищем в стандартных колонках
+        if (EquipmentColumnsConfig.COLUMN_DISPLAY_NAMES.containsKey(field)) {
+            return EquipmentColumnsConfig.COLUMN_DISPLAY_NAMES.get(field);
+        }
+
+        // Потом в аналитических
+        if (EquipmentColumnsConfig.ANALYTICS_DISPLAY_NAMES.containsKey(field)) {
+            return EquipmentColumnsConfig.ANALYTICS_DISPLAY_NAMES.get(field);
+        }
+
+        // Обрабатываем специальные поля
+        return switch (field.toLowerCase()) {
             case "purchaseyear" -> "Год покупки";
             case "count" -> "Количество";
-            default -> field; // Если не найдено, вернуть как есть
-        });
+            default -> field;
+        };
     }
 
     public static String getValueDisplayName(String valueField) {
-        return getFieldDisplayName(valueField);
+        return getFieldDisplayName(valueField)
+                ;
     }
 
     public static String getPrintableValue(Equipment equipment, String fieldName) {
         if (equipment == null || fieldName == null) return "";
 
-        return switch (fieldName.toLowerCase()) {
-            case "name" -> safeString(equipment.getName());
-            case "type" -> safeString(equipment.getType());
-            case "model" -> safeString(equipment.getModel());
-            case "serialnumber" -> safeString(equipment.getSerialNumber());
-            case "location" -> safeString(equipment.getLocation());
-            case "status" -> safeString(equipment.getStatus());
-            case "supplier" -> safeString(equipment.getSupplier());
-            case "cost" -> equipment.getCost() != null
-                    ? String.format(Locale.US, "%.2f", equipment.getCost())
-                    : "";
-            case "purchaseyear" -> equipment.getPurchaseDate() != null
+        // 1. Сначала проверим в конфиге строковых мапперов
+        Function<Equipment, String> mapper = EquipmentColumnsConfig.COLUMN_STRING_MAPPERS.get(fieldName);
+        if (mapper != null) {
+            return mapper.apply(equipment);
+        }
+
+        // 2. Обработка поля, которое есть только в логике, а не в COLUMN_STRING_MAPPERS
+        if ("purchaseyear".equalsIgnoreCase(fieldName)) {
+            return equipment.getPurchaseDate() != null
                     ? String.valueOf(equipment.getPurchaseDate().getYear())
                     : "Не указан";
-            case "purchasedate" -> formatDate(equipment.getPurchaseDate());
-            case "warrantyexpiration" -> formatDate(equipment.getWarrantyExpiration());
-            case "lastmaintenance" -> formatDate(equipment.getLastMaintenance());
-            case "nextmaintenance" -> formatDate(equipment.getNextMaintenance());
-            default -> "";
-        };
+        }
+
+        return "";
     }
 
-    private static String formatDate(java.time.LocalDate date) {
-        return date != null ? date.format(DATE_FORMATTER) : "";
+    // Стиль для критичного значения
+    public static CellStyle createCriticalStyle(Workbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+        Font font = workbook.createFont();
+        font.setColor(IndexedColors.WHITE.getIndex());
+        style.setFont(font);
+        style.setFillForegroundColor(IndexedColors.RED.getIndex());
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        return style;
     }
 
-    private static String safeString(String value) {
-        return value != null ? value : "";
+    // Стиль для предупреждающего значения
+    public static CellStyle createWarningStyle(Workbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+        style.setFillForegroundColor(IndexedColors.LIGHT_ORANGE.getIndex());
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        return style;
     }
+
 }
