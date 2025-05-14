@@ -1,42 +1,67 @@
 package com.example.vkr.Config;
 
 import com.example.vkr.Models.Equipment;
-import org.springframework.context.annotation.Configuration;
 
-import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.List;
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 
-@Configuration
 public class EquipmentColumnsConfig {
 
-    public static final List<String> COLUMN_NAMES = Arrays.asList(
-            "ID", "Название", "Тип", "Модель", "Серийный номер", "Локация",
-            "Дата закупки", "Гарантия до", "Последнее ТО", "Следующее ТО",
-            "Статус", "Поставщик", "Стоимость"
-    );
+    // Только те, что отображаются в таблице и в чекбоксах выбора колонок
+    public static final Map<String, String> COLUMN_DISPLAY_NAMES = new LinkedHashMap<>() {{
+        put("name", "Название");
+        put("type", "Тип оборудования");
+        put("model", "Модель");
+        put("serialNumber", "Серийный номер");
+        put("location", "Локация");
+        put("purchaseDate", "Дата закупки");
+        put("warrantyExpiration", "Гарантия до");
+        put("lastMaintenance", "Последнее ТО");
+        put("nextMaintenance", "Следующее ТО");
+        put("status", "Статус");
+        put("supplier", "Поставщик");
+        put("cost", "Стоимость");
+        // ❌ НЕ добавляем "purchaseYear" — он не нужен в таблице
+    }};
 
-    public static final Map<String, Function<Equipment, Object>> COLUMN_MAPPERS = new LinkedHashMap<>();
+    // Все поля, в т.ч. "purchaseYear" — для графиков, экспорта и т.д.
+    public static final Map<String, Function<Equipment, Object>> COLUMN_MAPPERS = new LinkedHashMap<>() {{
+        put("name", Equipment::getName);
+        put("type", Equipment::getType);
+        put("model", Equipment::getModel);
+        put("serialNumber", Equipment::getSerialNumber);
+        put("location", Equipment::getLocation);
+        put("purchaseDate", Equipment::getPurchaseDate);
+        put("warrantyExpiration", Equipment::getWarrantyExpiration);
+        put("lastMaintenance", Equipment::getLastMaintenance);
+        put("nextMaintenance", Equipment::getNextMaintenance);
+        put("status", Equipment::getStatus);
+        put("supplier", Equipment::getSupplier);
+        put("cost", Equipment::getCost);
+        put("purchaseYear", e -> e.getPurchaseDate() != null ? e.getPurchaseDate().getYear() : null); // ✅ оставляем
+    }};
 
-    static {
-        COLUMN_MAPPERS.put("Название", Equipment::getName);
-        COLUMN_MAPPERS.put("Тип", Equipment::getType);
-        COLUMN_MAPPERS.put("Модель", Equipment::getModel);
-        COLUMN_MAPPERS.put("Серийный номер", Equipment::getSerialNumber);
-        COLUMN_MAPPERS.put("Локация", Equipment::getLocation);
-        COLUMN_MAPPERS.put("Дата закупки", eq -> formatDate(eq.getPurchaseDate()));
-        COLUMN_MAPPERS.put("Гарантия до", eq -> formatDate(eq.getWarrantyExpiration()));
-        COLUMN_MAPPERS.put("Последнее ТО", eq -> formatDate(eq.getLastMaintenance()));
-        COLUMN_MAPPERS.put("Следующее ТО", eq -> formatDate(eq.getNextMaintenance()));
-        COLUMN_MAPPERS.put("Статус", Equipment::getStatus);
-        COLUMN_MAPPERS.put("Поставщик", Equipment::getSupplier);
-        COLUMN_MAPPERS.put("Стоимость", eq -> eq.getCost() != null ? eq.getCost() : 0.0);
-    }
+    public static final Map<String, Function<Equipment, String>> COLUMN_STRING_MAPPERS = new LinkedHashMap<>() {{
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+        put("name", e -> safe(e.getName()));
+        put("type", e -> safe(e.getType()));
+        put("model", e -> safe(e.getModel()));
+        put("serialNumber", e -> safe(e.getSerialNumber()));
+        put("location", e -> safe(e.getLocation()));
+        put("purchaseDate", e -> e.getPurchaseDate() != null ? e.getPurchaseDate().format(formatter) : "");
+        put("warrantyExpiration", e -> e.getWarrantyExpiration() != null ? e.getWarrantyExpiration().format(formatter) : "");
+        put("lastMaintenance", e -> e.getLastMaintenance() != null ? e.getLastMaintenance().format(formatter) : "");
+        put("nextMaintenance", e -> e.getNextMaintenance() != null ? e.getNextMaintenance().format(formatter) : "");
+        put("status", e -> safe(e.getStatus()));
+        put("supplier", e -> safe(e.getSupplier()));
+        put("cost", e -> e.getCost() != null ? String.format(Locale.US, "%.2f", e.getCost()) : "");
+        // не включаем "purchaseYear"
+    }};
 
-    private static String formatDate(LocalDate date) {
-        return date != null ? date.toString() : "";
+    private static String safe(String s) {
+        return s != null ? s : "";
     }
 }

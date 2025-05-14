@@ -166,6 +166,9 @@ public class ExcelChartBuilder {
         XDDFChartData.Series series = chartData.addSeries(categoryData, valuesData);
         series.setTitle(title, null);
 
+        XDDFChartLegend legend = chart.getOrAddLegend();
+        legend.setPosition(LegendPosition.RIGHT);
+
         chart.plot(chartData);
     }
 

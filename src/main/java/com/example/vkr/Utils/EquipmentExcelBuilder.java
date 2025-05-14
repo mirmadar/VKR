@@ -1,8 +1,7 @@
-package com.example.vkr.Services;
+package com.example.vkr.Utils;
 
 import com.example.vkr.Config.EquipmentColumnsConfig;
 import com.example.vkr.Models.Equipment;
-import com.example.vkr.Utils.ExcelChartBuilder;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.*;
 import java.io.ByteArrayInputStream;
@@ -10,10 +9,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
-import com.example.vkr.Utils.ExcelStyleUtil;
-import com.example.vkr.Utils.EquipmentFieldUtil;
 
-public class EquipmentExcelExporter {
+public class EquipmentExcelBuilder {
 
     public static ByteArrayInputStream exportToExcel(
             List<Equipment> equipmentList,
@@ -69,114 +66,45 @@ public class EquipmentExcelExporter {
         String yAxis = EquipmentFieldUtil.getValueDisplayName(valueField);
 
         if (subGroupByField != null && !subGroupByField.isEmpty()) {
-            Map<String, Map<String, Double>> groupedData = generateStackedChartData(
+            Map<String, Map<String, Double>> groupedData = ChartDataUtil.generateStackedChartData(
                     equipmentList, groupByField, subGroupByField, valueField);
 
             switch (chartType.toLowerCase()) {
                 case "stacked":
                 case "bar":
-                    ExcelChartBuilder.createStackedBarChart(
-                            (XSSFSheet) chartSheet,
-                            1, 1,
-                            groupedData,
-                            title,
-                            xAxis,
-                            yAxis
-                    );
+                    ExcelChartBuilder.createStackedBarChart((XSSFSheet) chartSheet, 1, 1, groupedData, title, xAxis, yAxis);
                     break;
                 case "line":
-                    ExcelChartBuilder.createLineChartWithGroups(
-                            (XSSFSheet) chartSheet,
-                            1, 1,
-                            groupedData,
-                            title,
-                            xAxis,
-                            yAxis
-                    );
+                    ExcelChartBuilder.createLineChartWithGroups((XSSFSheet) chartSheet, 1, 1, groupedData, title, xAxis, yAxis);
                     break;
                 default:
                     throw new IllegalArgumentException("Неизвестный тип графика с группировкой: " + chartType);
             }
         } else {
-            Map<String, Double> simpleData = generateSimpleChartData(equipmentList, groupByField, valueField);
+            Map<String, Double> simpleData = ChartDataUtil.generateSimpleChartData(equipmentList, groupByField, valueField)
+                    .entrySet().stream()
+                    .sorted(Map.Entry.comparingByKey()) // сортировка по возрастанию ключей (годов)
+                    .collect(Collectors.toMap(
+                            Map.Entry::getKey,
+                            Map.Entry::getValue,
+                            (e1, e2) -> e1,
+                            LinkedHashMap::new // сохранить порядок
+                    ));
 
             switch (chartType.toLowerCase()) {
                 case "bar":
-                    ExcelChartBuilder.createBarChart(
-                            (XSSFSheet) chartSheet,
-                            1, 1,
-                            simpleData,
-                            title,
-                            xAxis,
-                            yAxis
-                    );
+                    ExcelChartBuilder.createBarChart((XSSFSheet) chartSheet, 1, 1, simpleData, title, xAxis, yAxis);
                     break;
                 case "pie":
-                    ExcelChartBuilder.createPieChart(
-                            (XSSFSheet) chartSheet,
-                            1, 1,
-                            simpleData,
-                            title
-                    );
+                    ExcelChartBuilder.createPieChart((XSSFSheet) chartSheet, 1, 1, simpleData, title);
                     break;
                 case "line":
-                    ExcelChartBuilder.createLineChart(
-                            (XSSFSheet) chartSheet,
-                            1, 1,
-                            simpleData,
-                            title,
-                            xAxis,
-                            yAxis
-                    );
+                    ExcelChartBuilder.createLineChart((XSSFSheet) chartSheet, 1, 1, simpleData, title, xAxis, yAxis);
                     break;
                 default:
                     throw new IllegalArgumentException("Неизвестный тип графика: " + chartType);
             }
         }
-    }
-
-    private static Map<String, Map<String, Double>> generateStackedChartData(
-            List<Equipment> equipmentList,
-            String groupByField,
-            String subGroupByField,
-            String valueField
-    ) {
-        Map<String, Map<String, Double>> result = new LinkedHashMap<>();
-        Set<String> allSubCategories = equipmentList.stream()
-                .map(e -> String.valueOf(EquipmentFieldUtil.getGroupingValue(e, subGroupByField)))
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-
-        equipmentList.stream()
-                .map(e -> String.valueOf(EquipmentFieldUtil.getGroupingValue(e, groupByField)))
-                .distinct()
-                .forEach(mainCat -> {
-                    Map<String, Double> subMap = new LinkedHashMap<>();
-                    allSubCategories.forEach(subCat -> subMap.put(subCat, 0.0));
-                    result.put(mainCat, subMap);
-                });
-
-        for (Equipment equipment : equipmentList) {
-            String mainCat = String.valueOf(EquipmentFieldUtil.getGroupingValue(equipment, groupByField));
-            String subCat = String.valueOf(EquipmentFieldUtil.getGroupingValue(equipment, subGroupByField));
-            Double value = EquipmentFieldUtil.getChartValue(equipment, valueField);
-            result.get(mainCat).merge(subCat, value, Double::sum);
-        }
-
-        return result;
-    }
-
-    private static Map<String, Double> generateSimpleChartData(
-            List<Equipment> equipmentList,
-            String groupByField,
-            String valueField
-    ) {
-        Map<String, Double> result = new LinkedHashMap<>();
-        for (Equipment equipment : equipmentList) {
-            String groupKey = String.valueOf(EquipmentFieldUtil.getGroupingValue(equipment, groupByField));
-            Double value = EquipmentFieldUtil.getChartValue(equipment, valueField);
-            result.merge(groupKey, value, Double::sum);
-        }
-        return result;
     }
 
     private static void fillEquipmentData(

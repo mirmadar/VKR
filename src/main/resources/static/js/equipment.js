@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
      // ==================== Экспорт данных ====================
      function getExportParams() {
          const selectedColumns = Array.from(document.querySelectorAll('.form-check-input[type="checkbox"]:checked'))
-             .filter(checkbox => !checkbox.id || checkbox.id !== 'includeChartInExport')
+             .filter(checkbox => checkbox.dataset.column && checkbox.id !== 'includeChartInExport')
              .map(checkbox => checkbox.dataset.column);
 
          if (selectedColumns.length === 0) {
@@ -302,6 +302,29 @@ document.addEventListener('DOMContentLoaded', function() {
                  }
              });
          } else {
+         // === СОРТИРОВКА ПО labels (по возрастанию) ===
+         if (Array.isArray(data.labels) && Array.isArray(data.values)) {
+             // Определим, с подгруппами или нет
+             if (!data.subGroupByField) {
+                 const combined = data.labels.map((label, index) => ({
+                     label,
+                     value: data.values[index]
+                 }));
+
+                 // Сортируем по label (по возрастанию)
+                 combined.sort((a, b) => {
+                     const aNum = Number(a.label);
+                     const bNum = Number(b.label);
+                     return isNaN(aNum) || isNaN(bNum)
+                         ? a.label.localeCompare(b.label, undefined, { numeric: true })
+                         : aNum - bNum;
+                 });
+
+                 data.labels = combined.map(item => item.label);
+                 data.values = combined.map(item => item.value);
+             }
+         }
+
              // Простое отображение для других типов графиков
              window.currentChart = new Chart(ctx, {
                  type: chartType,
@@ -381,6 +404,8 @@ document.addEventListener('DOMContentLoaded', function() {
                  grouped[subGroup][labelIndex] = item.value;
              }
          });
+
+
 
          return grouped;
      }
