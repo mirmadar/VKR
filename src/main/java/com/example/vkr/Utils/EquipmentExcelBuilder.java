@@ -163,7 +163,12 @@ public class EquipmentExcelBuilder {
                 } else if (columnName.equals("remainingWarrantyYears") || columnName.equals("remainingWarrantyComment")) {
                     AnalyticsInfoDTO dto = dtoMap.get("warranty");
                     value = (dto != null)
-                            ? (columnName.equals("remainingWarrantyYears") ? dto.getNumericValue() : dto.getFormattedComment())
+                            ? (columnName.endsWith("Years") ? dto.getNumericValue() : dto.getFormattedComment())
+                            : "";
+                } else if (columnName.equals("remainingMaintenanceYears") || columnName.equals("remainingMaintenanceComment")) {
+                    AnalyticsInfoDTO dto = dtoMap.get("maintenance");
+                    value = (dto != null)
+                            ? (columnName.endsWith("Years") ? dto.getNumericValue() : dto.getFormattedComment())
                             : "";
                 } else {
                     value = "";
@@ -182,17 +187,16 @@ public class EquipmentExcelBuilder {
                     }
                 }
 
-                // Стилизация remainingWarrantyYears
-                if ("remainingWarrantyYears".equals(columnName) && value instanceof Number) {
+                if (columnName.endsWith("Years") && value instanceof Number) {
                     double remaining = ((Number) value).doubleValue();
                     if (remaining <= 0) {
-                        cell.setCellStyle(criticalStyle);
+                        cell.setCellStyle(criticalStyle); // красный
                     } else if (remaining < 0.5) {
-                        cell.setCellStyle(highStyle);
+                        cell.setCellStyle(highStyle);     // оранжевый
                     } else if (remaining < 2) {
-                        cell.setCellStyle(warningStyle);
+                        cell.setCellStyle(warningStyle);  // жёлтый
                     } else {
-                        cell.setCellStyle(okStyle);
+                        cell.setCellStyle(okStyle);       // зелёный
                     }
                 }
             }
@@ -217,6 +221,24 @@ public class EquipmentExcelBuilder {
                 Row row = sheet.createRow(legendStartRow + r);
                 for (int c = 0; c < warrantyLegend[r].length; c++) {
                     row.createCell(c).setCellValue(warrantyLegend[r][c]);
+                }
+            }
+        }
+        if (columnsToExport.contains("remainingMaintenanceYears")) {
+            int legendStartRow = sheet.getLastRowNum() + 2;
+
+            String[][] maintenanceLegend = {
+                    {"Интерпретация поля \"До следующего ТО\":"},
+                    {">= 90 дней", "Зелёный (в пределах нормы)"},
+                    {"30 – 89 дней", "Жёлтый (подходит срок)"},
+                    {"1 – 29 дней", "Оранжевый (очень скоро)"},
+                    {"<= 0 дней", "Красный (просрочено)"}
+            };
+
+            for (int r = 0; r < maintenanceLegend.length; r++) {
+                Row row = sheet.createRow(legendStartRow + r);
+                for (int c = 0; c < maintenanceLegend[r].length; c++) {
+                    row.createCell(c).setCellValue(maintenanceLegend[r][c]);
                 }
             }
         }

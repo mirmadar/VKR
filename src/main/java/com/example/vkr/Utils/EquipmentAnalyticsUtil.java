@@ -38,4 +38,29 @@ public class EquipmentAnalyticsUtil {
                 })
                 .collect(Collectors.toList());
     }
+
+    public static List<AnalyticsInfoDTO> buildMaintenanceAnalytics(List<Equipment> equipmentList) {
+        LocalDate today = LocalDate.now();
+
+        return equipmentList.stream().map(eq -> {
+            AnalyticsInfoDTO dto = new AnalyticsInfoDTO();
+            dto.setEquipmentId(eq.getId());
+            dto.setName(eq.getName());
+            dto.setType("maintenance");
+
+            LocalDate next = eq.getNextMaintenance();
+
+            if (next != null) {
+                long remainingDays = ChronoUnit.DAYS.between(today, next);
+                dto.setNumericValue(Double.valueOf(Math.max(remainingDays, 0)));
+                dto.setFormattedComment(remainingDays >= 0
+                        ? "Осталось ≈ " + remainingDays + " дней"
+                        : "Просрочено ≈ " + Math.abs(remainingDays) + " дней назад");
+            } else {
+                dto.setFormattedComment("Дата следующего ТО не указана");
+            }
+
+            return dto;
+        }).collect(Collectors.toList());
+    }
 }

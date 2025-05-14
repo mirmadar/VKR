@@ -64,6 +64,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 selectedColumns.push('remainingWarrantyComment');
             }
         }
+        if (analyticsFields.includes('maintenance')) {
+            if (!selectedColumns.includes('remainingMaintenanceYears')) {
+                selectedColumns.push('remainingMaintenanceYears');
+            }
+            if (!selectedColumns.includes('remainingMaintenanceComment')) {
+                selectedColumns.push('remainingMaintenanceComment');
+            }
+        }
 
         const params = new URLSearchParams();
         selectedColumns.forEach(col => params.append('columns', col));

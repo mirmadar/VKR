@@ -30,10 +30,8 @@ public class EquipmentColumnsConfig {
     public static final Map<String, String> ANALYTICS_DISPLAY_NAMES = new LinkedHashMap<>() {{
         put("remainingWarrantyYears", "До окончания гарантии (лет)");
         put("remainingWarrantyComment", "Комментарий по гарантии");
-    }};
-
-    public static final Map<String, String> ANALYTICS_STRING_MAPPERS = new LinkedHashMap<>() {{
-
+        put("remainingMaintenanceYears", "До следующего ТО (лет)");
+        put("remainingMaintenanceComment", "Комментарий по ТО");
     }};
 
     public static final Map<String, Function<Equipment, Object>> COLUMN_MAPPERS = new LinkedHashMap<>() {{
@@ -66,7 +64,6 @@ public class EquipmentColumnsConfig {
         put("status", e -> safe(e.getStatus()));
         put("supplier", e -> safe(e.getSupplier()));
         put("cost", e -> e.getCost() != null ? String.format(Locale.US, "%.2f", e.getCost()) : "");
-        // ❌ УБРАНЫ remainingWarrantyXXX
     }};
 
     private static String safe(String s) {

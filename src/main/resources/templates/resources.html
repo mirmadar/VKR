@@ -200,13 +200,13 @@
         </div>
       </div>
 
-      <!-- Аккордеон "Аналитика" -->
+      <!-- Аккордеон "Метрики" -->
       <div class="accordion mb-3" id="analyticsAccordion">
         <div class="accordion-item">
           <h2 class="accordion-header">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                     data-bs-target="#collapseAnalytics">
-              <i class="bi bi-graph-up-arrow me-2"></i> Аналитика
+              <i class="bi bi-calculator me-2"></i> Метрики
             </button>
           </h2>
           <div id="collapseAnalytics" class="accordion-collapse collapse" data-bs-parent="#analyticsAccordion">
@@ -215,10 +215,16 @@
                 <input class="form-check-input analytics-checkbox" type="checkbox" role="switch"
                        value="warranty" id="analyticsWarranty" name="analyticsFields">
                 <label class="form-check-label" for="analyticsWarranty">
-                  До окончания гарантии
+                  Оставшийся гарантийный срок
+                </label>
+              </div><br>
+              <div class="form-check form-switch">
+                <input class="form-check-input analytics-checkbox" type="checkbox" role="switch"
+                       value="maintenance" id="analyticsMaintenance" name="analyticsFields">
+                <label class="form-check-label" for="analyticsMaintenance">
+                  Оставшееся время до ТО
                 </label>
               </div>
-              <!-- В будущем можно добавлять другие -->
             </div>
           </div>
         </div>

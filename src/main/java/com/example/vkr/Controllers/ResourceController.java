@@ -78,7 +78,9 @@ public class ResourceController {
             if (analyticsFields.contains("warranty")) {
                 analytics.addAll(EquipmentAnalyticsUtil.buildWarrantyAnalytics(equipmentList));
             }
-            // Добавить другие типы по мере появления
+            if (analyticsFields.contains("maintenance")) {
+                analytics.addAll(EquipmentAnalyticsUtil.buildMaintenanceAnalytics(equipmentList));
+            }
         }
 
         List<String> exportColumns;
